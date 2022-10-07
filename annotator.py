@@ -14,16 +14,25 @@ class Annotator:
         self.name = name
         self.person_annotations_filepath = os.path.join('data', person_annotations_file)
         with open(self.person_annotations_filepath) as json_file:
-            self.data = [json.loads(line) for line in open(self.person_annotations_filepath,'r')]
+            self.annotations = [json.loads(line) for line in open(self.person_annotations_filepath,'r')]
+        self.doc_idxs = []
 
-    def get_doc_ids(self) -> list :
-        doc_ids = []
-        for idx in range(len(self.data)):
-            ids = self.data[idx]["doc_idx"]
-            doc_ids.append(ids)
-        return doc_ids
+    def get_doc_idxs(self) -> list :        
+        for idx in range(len(self.annotations)):
+            ids = self.annotations[idx]["doc_idx"]
+            self.doc_idxs.append(ids)
+        return self.doc_idxs
+    
+    def get_doc_idx(self, doc_idx: int) -> dict :
+        for idx in range(len(self.annotations)):
+            ids = self.annotations[idx]["doc_idx"]
+            if ids == doc_idx:
+                return self.annotations[idx]
 
-    def get_mentions(self, doc_id: int) -> str :
-        return self.data[doc_id]["mentions"]
+    def get_doc_mentions(self, doc_dict) -> str :
+        return doc_dict["mentions"]
+
+    def get_doc_tokens(self, doc_dict) -> str :
+        return doc_dict["tokens"]
    
             
