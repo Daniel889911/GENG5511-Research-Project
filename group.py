@@ -51,30 +51,35 @@ class Group_Metrics :
             annotations_list2.append(annotations_list1)    
         return annotations_list2
     
-    def get_group_words(self):
-        annotated_list = []
-        i = 40
-        mention1 = self.annotator1.get_doc_mentions(i)
-        token1 = self.annotator1.get_doc_tokens(i)
-        annotated1 = self.get_token_label(token1, mention1)  
-        annotated_list.append(annotated1)
+    def get_corpus_metrics(self):
+        annotated_doc = []
+        annotated_corpus = []
 
-        mention2 = self.annotator2.get_doc_mentions(i)
-        token2 = self.annotator2.get_doc_tokens(i)
-        annotated2 = self.get_token_label(token2, mention2)
-        annotated_list.append(annotated2)
+        for i in self.same_docs:
+            mention1 = self.annotator1.get_doc_mentions(i)
+            token1 = self.annotator1.get_doc_tokens(i)
+            annotated1 = self.get_token_label(token1, mention1)  
+            annotated_doc.append(annotated1)
 
-        mention3 = self.annotator3.get_doc_mentions(i)
-        token3 = self.annotator3.get_doc_tokens(i)
-        annotated3 = self.get_token_label(token3, mention3)
-        annotated_list.append(annotated3)
+            mention2 = self.annotator2.get_doc_mentions(i)
+            token2 = self.annotator2.get_doc_tokens(i)
+            annotated2 = self.get_token_label(token2, mention2)
+            annotated_doc.append(annotated2)
 
-        mention4 = self.annotator4.get_doc_mentions(i)
-        token4 = self.annotator4.get_doc_tokens(i)
-        annotated4 = self.get_token_label(token4, mention4)
-        annotated_list.append(annotated4)
+            mention3 = self.annotator3.get_doc_mentions(i)
+            token3 = self.annotator3.get_doc_tokens(i)
+            annotated3 = self.get_token_label(token3, mention3)
+            annotated_doc.append(annotated3)
 
-        return self.get_doc_metrics(annotated_list)    
+            mention4 = self.annotator4.get_doc_mentions(i)
+            token4 = self.annotator4.get_doc_tokens(i)
+            annotated4 = self.get_token_label(token4, mention4)
+            annotated_doc.append(annotated4)
+
+            doc_metrics = self.get_doc_metrics(annotated_doc)
+            annotated_corpus.append(doc_metrics)
+            annotated_doc.clear()
+        return annotated_corpus
 
     def get_doc_metrics(self, group_annotated_doc) :
         token_labels = []
@@ -87,26 +92,30 @@ class Group_Metrics :
         group_annotated_doc.pop(number)
         for i in range(len(longest_tokens)):
             longest_token = longest_tokens[i][0]
-            longest_label = longest_tokens[i][1]
+            longest_label = self.list_To_String(longest_tokens[i][1])
             token_labels.append(longest_label)
             for annotator in group_annotated_doc:
                 for annotated_token in annotator:
                      if longest_token in annotated_token[0]:
-                        label = annotated_token[1]
+                        label = self.list_To_String(annotated_token[1]) 
                         token_labels.append(label)
                         break
-
             majority_label = self.get_majority_label(token_labels)
-            print(majority_label)
-            # all_labels_same = self.get_all_labels_same(token_labels)
-            # token_majority_label_metric = [longest_token, majority_label, all_labels_same]
-            # print(token_majority_label_metric)
-            # token_labels.clear()
-            # doc_metrics.append(token_majority_label_metric)        
+            all_labels_same = self.get_all_labels_same(token_labels)
+            token_majority_label_metric = [longest_token, majority_label, all_labels_same]
+            token_labels.clear()
+            doc_metrics.append(token_majority_label_metric)
+        return doc_metrics
  
     def get_majority_label(self, List) :
-        occurence_count = Counter(List)
-        return occurence_count.most_common(1)[0][0]
+        counter = 0
+        num = List[0]     
+        for i in List:
+            curr_frequency = List.count(i)
+        if(curr_frequency> counter):
+            counter = curr_frequency
+            num = i 
+        return num 
 
     def get_all_labels_same(self, List) :
         for i in range(len(List)-1):
@@ -116,6 +125,12 @@ class Group_Metrics :
                 return False
         return True
 
+    def list_To_String(self,List):    
+        # initialize an empty string
+        str1 = " "    
+        # return string 
+        return (str1.join(List))
+
     def add_padding(self, length, List):
         diff_len = length - len(List)
         if diff_len < 0:
@@ -124,7 +139,6 @@ class Group_Metrics :
 
     def get_longest_annotation_number(self, group_annotated_doc) :
         longest = 0
-        count = -1
         for i in range(len(group_annotated_doc)):
             length = len(group_annotated_doc[i])                 
             if length > longest:
