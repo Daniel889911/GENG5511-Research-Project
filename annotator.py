@@ -39,6 +39,6 @@ class Annotator:
         for idx in range(len(self.annotations)):
             ids = self.annotations[idx]["doc_idx"]
             if ids == doc_idx:
-                return self.annotations[idx]["mentions"]
+                return self.annotations[idx]["tokens"]
    
             
