@@ -84,11 +84,10 @@ class Ngram_Metrics :
     
     def get_corpus_metrics(self):
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the calculated label corpus metrics from all the documents from the group
 
-            Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+            Returns:
+                The calculated label corpus metrics for all documents annotated by the group
               
         """
         annotated_doc = []
@@ -118,15 +117,18 @@ class Ngram_Metrics :
             doc_metrics = self.get_doc_metrics(annotated_doc)
             annotated_corpus.append(doc_metrics)
             annotated_doc.clear()
-        return annotated_corpus[0]
+        return annotated_corpus[2]
 
     def get_doc_metrics(self, group_annotated_doc: list) -> list :
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the calculated label corpus metrics from all the same documents from the group
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                group_annotated_doc :
+                    The annotated group documents containing tokens with labels for the same document
+                    
+            Returns:
+                The calculated corpus label metrics for a single document
               
         """
         token_labels = []
@@ -155,7 +157,7 @@ class Ngram_Metrics :
                 if count_ngram < 2:
                     orig_ngram_ratio = count_ngram/ self.annotator_count
                     label_ratio = "N/A"
-                    single_ngram = [token_labels, orig_ngram, orig_ngram_ratio, orig_token, orig_label, label_ratio]
+                    single_ngram = [orig_ngram, orig_ngram_ratio, orig_token, orig_label, label_ratio]
                     doc_metrics.append(single_ngram)
                 else :
                     if not self.search_ngram_in_list(orig_ngram, doc_metrics):
@@ -167,7 +169,7 @@ class Ngram_Metrics :
                         ngram_ratio = count_ngram/ self.annotator_count                                     
                         # Calculate the percentage ratio of majority label
                         label_ratio = (majority_label_count + count_label)/ self.annotator_count
-                        ngram_metrics = [token_labels, orig_ngram, ngram_ratio, orig_token, majority_label_count, majority_label, label_ratio]
+                        ngram_metrics = [orig_ngram, ngram_ratio, orig_token, majority_label, label_ratio]
                         doc_metrics.append(ngram_metrics)   
                     else:
                         continue
@@ -202,13 +204,16 @@ class Ngram_Metrics :
  
     def list_To_String(self, List: list) -> str:
         """
-            Class for obtaining the individual annotator label metrics 
+            Converts a list into a string 
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                List :
+                    The object of type list to convert to string
+                    
+            Returns:
+                The converted object from list into type string
               
-        """    
+        """   
         str1 = " "    
         return (str1.join(List))
 

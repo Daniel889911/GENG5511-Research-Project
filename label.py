@@ -42,6 +42,7 @@ class Label_Metrics :
             Parameters:
                 doc_idx :
                     The document ids of two annotators
+
             Returns:
                 The same document ids shared by two annotators 
               
@@ -54,13 +55,18 @@ class Label_Metrics :
                     break
         return doc_list 
     
-    def get_token_label(self, tokens:list, mentions:list) -> list:
+    def get_token_label(self, tokens:list, mentions: dict) -> list:
         """
-            Gets the  
+            Gets the combined token, labels, and gets the correct position of tokens
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                tokens :
+                    The list of tokens for a document id
+                mentions : 
+                    The dictionary of mentions for a document id
+                    
+            Returns:
+                The combined tokens with labels as a list for a document id 
               
         """
         annotations_list1 = []
@@ -77,11 +83,10 @@ class Label_Metrics :
     
     def get_corpus_metrics(self):
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the calculated label corpus metrics from all the documents from the group
 
-            Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+            Returns:
+                The calculated label corpus metrics for all documents annotated by the group
               
         """
         annotated_doc = []
@@ -115,11 +120,14 @@ class Label_Metrics :
 
     def get_doc_metrics(self, group_annotated_doc: list) -> list :
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the calculated label corpus metrics from all the same documents from the group
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                group_annotated_doc :
+                    The annotated group documents containing tokens with labels for the same document
+                    
+            Returns:
+                The calculated corpus label metrics for a single document
               
         """
         token_labels = []
@@ -161,13 +169,16 @@ class Label_Metrics :
             for token_agreement in annotated_document:
                 print(token_agreement[2])
  
-    def get_majority_label(self, List: list) -> str:
+    def get_majority_label(self, Label_List: list) -> str:
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the majority labelled annotator agreement for a token by the group
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                Label_List :
+                    The list of labels annotated for a single token by the group
+                    
+            Returns:
+                The majority label for a token by the group 
               
         """
         counter = 0
@@ -179,13 +190,16 @@ class Label_Metrics :
             num = i 
         return num 
 
-    def get_all_labels_same(self, List: list) -> bool:
+    def get_all_labels_same(self, Label_List: list) -> bool:
         """
-            Class for obtaining the individual annotator label metrics 
+            Gives a boolean True if all labels are the same and False if not all the same for a token 
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                Label_List :
+                    The list of labels annotated for a single token by the group
+                    
+            Returns:
+                True if all labels are the same and False if not all the same 
               
         """
         for i in range(len(List)-1):
@@ -197,23 +211,31 @@ class Label_Metrics :
 
     def list_To_String(self, List: list) -> str:
         """
-            Class for obtaining the individual annotator label metrics 
+            Converts a list into a string 
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                List :
+                    The object of type list to convert to string
+                    
+            Returns:
+                The converted object from list into type string
               
         """    
         str1 = " "    
         return (str1.join(List))
 
-    def add_padding(self, length:int, List: list) -> list:
+    def add_padding(self, list_length:int, token_list: list) -> list:
         """
-            Class for obtaining the individual annotator label metrics 
+            Adds padding to shorter list of tokens in order to be able to loop through all lists together
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                list_length :
+                    The desired length of the list to add padding to
+                token_list : 
+                    The token list to add padding into the desired list length
+                    
+            Returns:
+                The token list with padding into the desired list length 
               
         """
         diff_len = length - len(List)
@@ -221,13 +243,16 @@ class Label_Metrics :
             raise AttributeError('Length error list is too long')
         return List + ["null empty"] * diff_len       
 
-    def get_longest_annotation_number(self, group_annotated_doc:list) -> int :
+    def get_longest_annotation_number(self, group_annotated_token_doc:list) -> int :
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the longest list length of the token in the group annotated document 
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
+                group_annotated_token_doc :
+                    The group annotation tokens for a document 
+                    
+            Returns:
+                The longest list length of token in the document
               
         """
         longest = 0
