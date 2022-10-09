@@ -186,6 +186,12 @@ class Ngram_Metrics :
     #         print("new doc")
     #         for token_agreement in annotated_document:
     #             print(token_agreement[2])
+
+    def search_ngram_in_list(self, orig_ngram:list, doc_metrics: list) -> bool :
+        for ngrams in doc_metrics:
+            if orig_ngram in ngrams:
+                return True
+        return False
  
     def get_majority_label_count(self, List:list, majority_label: str) -> int:
         counter = 0
