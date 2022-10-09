@@ -1,5 +1,6 @@
 from annotator import Annotator
 from collections import Counter
+from statistics import multimode
 
 class Label_Metrics :
 
@@ -148,7 +149,7 @@ class Label_Metrics :
                         label = self.list_To_String(annotated_token[1]) 
                         token_labels.append(label)
                         break
-            majority_label = self.get_majority_label(token_labels)
+            majority_label = multimode(token_labels)
             all_labels_same = self.get_all_labels_same(token_labels)
             token_majority_label_metric = [longest_token, majority_label, all_labels_same]
             token_labels.clear()
@@ -169,27 +170,6 @@ class Label_Metrics :
             for token_agreement in annotated_document:
                 print(token_agreement[2])
  
-    def get_majority_label(self, Label_List: list) -> str:
-        """
-            Gets the majority labelled annotator agreement for a token by the group
-
-            Parameters:
-                Label_List :
-                    The list of labels annotated for a single token by the group
-                    
-            Returns:
-                The majority label for a token by the group 
-              
-        """
-        counter = 0
-        num = List[0]     
-        for i in List:
-            curr_frequency = List.count(i)
-        if(curr_frequency> counter):
-            counter = curr_frequency
-            num = i 
-        return num 
-
     def get_all_labels_same(self, Label_List: list) -> bool:
         """
             Gives a boolean True if all labels are the same and False if not all the same for a token 
@@ -202,8 +182,8 @@ class Label_Metrics :
                 True if all labels are the same and False if not all the same 
               
         """
-        for i in range(len(List)-1):
-            if List[i] == List[i+1]:
+        for i in range(len(Label_List)-1):
+            if Label_List[i] == Label_List[i+1]:
                 continue
             else:
                 return False
@@ -238,10 +218,10 @@ class Label_Metrics :
                 The token list with padding into the desired list length 
               
         """
-        diff_len = length - len(List)
+        diff_len = list_length - len(token_list)
         if diff_len < 0:
             raise AttributeError('Length error list is too long')
-        return List + ["null empty"] * diff_len       
+        return token_list + ["null empty"] * diff_len       
 
     def get_longest_annotation_number(self, group_annotated_token_doc:list) -> int :
         """
@@ -256,8 +236,8 @@ class Label_Metrics :
               
         """
         longest = 0
-        for i in range(len(group_annotated_doc)):
-            length = len(group_annotated_doc[i])                 
+        for i in range(len(group_annotated_token_doc)):
+            length = len(group_annotated_token_doc[i])                 
             if length > longest:
                 longest = length
                 index = i

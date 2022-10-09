@@ -8,7 +8,7 @@
 {"doc_idx":7,"tokens":["mast","will","not","lower"],"mentions":[{"start":0,"end":1,"labels":["Item"]},{"start":1,"end":4,"labels":["Observation/Observed_state"]}]}
 {"doc_idx":8,"tokens":["mast","will","not","raise"],"mentions":[{"start":0,"end":1,"labels":["Item"]},{"start":1,"end":4,"labels":["Observation/Observed_state"]}]}
 {"doc_idx":9,"tokens":["mast","will","not","unlock"],"mentions":[{"start":0,"end":1,"labels":["Item"]},{"start":1,"end":4,"labels":["Observation/Observed_state"]}]}
-{"doc_idx":40,"tokens":["repair1","/","replace","head","proximity","switch"],"mentions":[{"start":0,"end":1,"labels":["Activity"]},{"start":2,"end":3,"labels":["Activity"]},{"start":3,"end":6,"labels":["Item"]}]}
+{"doc_idx":40,"tokens":["repair","/","replace","head","proximity","switch"],"mentions":[{"start":0,"end":1,"labels":["Activity"]},{"start":2,"end":3,"labels":["Activity"]},{"start":3,"end":6,"labels":["Item"]}]}
 {"doc_idx":41,"tokens":["inverter","damaged","240v","circuit"],"mentions":[{"start":0,"end":1,"labels":["Item"]},{"start":1,"end":2,"labels":["Observation/Observed_state"]},{"start":2,"end":3,"labels":["Specifier"]},{"start":3,"end":4,"labels":["Item"]}]}
 {"doc_idx":42,"tokens":["inverter","has","no","output."],"mentions":[{"start":0,"end":1,"labels":["Item"]},{"start":1,"end":4,"labels":["Observation/Observed_state"]}]}
 {"doc_idx":43,"tokens":["inverter","keeps","tripping","on","NA"],"mentions":[{"start":0,"end":1,"labels":["Item"]},{"start":1,"end":3,"labels":["Observation/Observed_state"]}]}
