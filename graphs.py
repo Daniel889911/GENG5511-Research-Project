@@ -14,7 +14,7 @@ def create_pie_chart(label_list):
         explode = (0.1, 0.0)
         
         # Creating color parameters
-        colors = ( "beige", "cyan")
+        colors = ( "blue", "magenta")
         
         # Wedge properties
         wp = { 'linewidth' : 1, 'edgecolor' : "green" }
@@ -34,7 +34,7 @@ def create_pie_chart(label_list):
                                         colors = colors,
                                         startangle = 90,
                                         wedgeprops = wp,
-                                        textprops = dict(color ="magenta"))
+                                        textprops = dict(color ="yellow"))
         
         # Adding legend
         ax.legend(wedges, label,
