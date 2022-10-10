@@ -185,6 +185,13 @@ class Label_Metrics :
         return label_metrics_list
 
     def get_all_labels(self) -> list:
+        """
+            Gets all the labels in the annotated corpus 
+                  
+            Returns:
+                All the labels in the annotated corpus in a list 
+              
+        """
         label_list = []
         for document_metrics in self.annotated_corpus :
             for metrics in document_metrics:

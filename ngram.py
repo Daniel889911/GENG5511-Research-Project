@@ -191,19 +191,66 @@ class Ngram_Metrics :
                             continue                          
         return doc_metrics
     
-    # def get_annotator_metrics(self, annotated_corpus):
-    #     """
-    #         Class for obtaining the individual annotator label metrics 
+    def get_label_ngram_metrics(self, corpus_metrics: list) -> list:
+        """
+            Get the label and ngram metrics
 
-    #         Parameters:
-    #             annotators :
-    #                 Instance of Annotator class for a person
+            Parameters:
+                corpus_metrics :
+                    The corpus metrics
+            
+            Returns :
+                The list of calculated values of label and ngram metrics for graphing
               
-    #     """
-    #     for annotated_document in annotated_corpus:
-    #         print("new doc")
-    #         for token_agreement in annotated_document:
-    #             print(token_agreement[2])
+        """
+        labels_list = self.get_all_labels()
+
+        metrics_list = []
+
+        for label in labels_list:
+            for document_metric in corpus_metrics:
+                for ngram_metric in document_metric:
+                    if ngram_metric[4] == label:
+                        ngram_value = 0
+                        label_value = 0
+                        count_label = 0
+                        count_ngram = 0
+                        ngram = ngram_metric[0][2]
+                        ngram_value += ngram_metric[2]
+                        count_ngram += 1
+                        if ngram_metric[5] == "N/A":
+                            continue
+                        else :
+                            label_value += int(ngram_metric[5])
+                            count_label += 1
+            if count_label == 0 :
+                label_average_value = "N/A"
+            else :                
+                label_average_value = label_value/ count_label
+            ngram_average_value = ngram_value/ count_ngram
+            label_ngram_metric = [label, label_average_value, ngram, ngram_average_value]
+            metrics_list.append(label_ngram_metric)
+
+        return metrics_list
+
+    def get_all_labels(self) -> list:
+        """
+            Gets all the labels in the annotated corpus 
+                  
+            Returns:
+                All the labels in the annotated corpus in a list 
+              
+        """
+        label_list = []
+
+        annotated_corpus = self.get_corpus_metrics()
+
+        for document_metrics in annotated_corpus :
+            for metrics in document_metrics:
+                if metrics[4] not in label_list:
+                    label_list.append(metrics[4])
+
+        return label_list
 
     def search_ngram(self, ngram: list, doc_metrics: list):
         """
@@ -214,7 +261,7 @@ class Ngram_Metrics :
                     The ngram metric list
                     
             Returns:
-                The found ngram metric and the index in doc_metrrics
+                The found ngram metric and the index in doc_metrics
               
         """   
         for count, metric in enumerate(doc_metrics):
