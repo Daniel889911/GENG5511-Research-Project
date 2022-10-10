@@ -22,6 +22,7 @@ class Label_Metrics :
         self.annotator3_doc_ids = annotator3.get_doc_idxs()
         self.annotator4_doc_ids = annotator4.get_doc_idxs()
         self.same_docs = []
+        self.annotated_corpus = []
 
     def get_same_doc_ids(self) : 
         """
@@ -34,7 +35,6 @@ class Label_Metrics :
         list1 = self.get_common_files(self.annotator1_doc_ids,self.annotator2_doc_ids)
         list2 = self.get_common_files(self.annotator3_doc_ids,self.annotator4_doc_ids)
         self.same_docs = self.get_common_files(list1,list2)
-        return self.same_docs
     
     def get_common_files(self, doc_ids1 : list, doc_ids2: list) -> list:
         """
@@ -92,7 +92,8 @@ class Label_Metrics :
               
         """
         annotated_doc = []
-        annotated_corpus = []
+
+        self.get_same_doc_ids()
 
         for i in self.same_docs:        
             mention1 = self.annotator1.get_doc_mentions(i)
@@ -116,9 +117,8 @@ class Label_Metrics :
             annotated_doc.append(annotated4)
 
             doc_metrics = self.get_doc_metrics(annotated_doc)
-            annotated_corpus.append(doc_metrics)
+            self.annotated_corpus.append(doc_metrics)
             annotated_doc.clear()
-        return annotated_corpus
 
     def get_doc_metrics(self, group_annotated_doc: list) -> list :
         """
@@ -157,7 +157,7 @@ class Label_Metrics :
             doc_metrics.append(token_majority_label_metric)
         return doc_metrics
     
-    def get_label_metrics(self, annotated_corpus:list) -> int:
+    def get_label_metrics(self) -> list:
         """
             Gets the label category metrics for corpus 
 
@@ -168,12 +168,12 @@ class Label_Metrics :
             Returns : 
                 The calculated metrics for all the label             
         """
-        label_list = self.get_all_labels(annotated_corpus)
+        label_list = self.get_all_labels()
         label_metrics_list = []
         counter_false = 0
         counter_true = 0
         for label in label_list :
-            for annotated_document in annotated_corpus:
+            for annotated_document in self.annotated_corpus:
                 for token_agreement in annotated_document:
                     if token_agreement[1] == label:
                         if token_agreement[2] == True:
@@ -184,9 +184,9 @@ class Label_Metrics :
             label_metrics_list.append(label_metrics)
         return label_metrics_list
 
-    def get_all_labels(self, annotated_corpus:list) -> list:
+    def get_all_labels(self) -> list:
         label_list = []
-        for document_metrics in annotated_corpus :
+        for document_metrics in self.annotated_corpus :
             for metrics in document_metrics:
                 if metrics[1] not in label_list:
                     label_list.append(metrics[1])
