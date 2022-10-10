@@ -1,5 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
+import numpy as np
+import seaborn as sns
 
 def create_pie_chart(label_list):
     for label_data in label_list:
@@ -45,3 +48,9 @@ def create_pie_chart(label_list):
         
         # show plot
         plt.show()
+
+def create_heatmap(ngram_metrics):
+    df = pd.DataFrame(ngram_metrics, columns =['Label', 'Ngram', 'Metric'])
+    df2 = df.sort_values(by="Metric", ascending=True)
+    df3 = df2.pivot("Label", "Ngram",values='Metric')
+    sns.heatmap(df3,cmap='RdYlGn', annot=True)
