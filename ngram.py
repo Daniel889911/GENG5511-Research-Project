@@ -93,30 +93,31 @@ class Ngram_Metrics :
         annotated_doc = []
         annotated_corpus = []
 
-        for i in self.same_docs:
-            mention1 = self.annotator1.get_doc_mentions(i)
-            token1 = self.annotator1.get_doc_tokens(i)
-            annotated1 = self.get_token_label(token1, mention1)  
-            annotated_doc.append(annotated1)
+        # for i in self.same_docs:
+        i = 41        
+        mention1 = self.annotator1.get_doc_mentions(i)
+        token1 = self.annotator1.get_doc_tokens(i)
+        annotated1 = self.get_token_label(token1, mention1)  
+        annotated_doc.append(annotated1)
 
-            mention2 = self.annotator2.get_doc_mentions(i)
-            token2 = self.annotator2.get_doc_tokens(i)
-            annotated2 = self.get_token_label(token2, mention2)
-            annotated_doc.append(annotated2)
+        mention2 = self.annotator2.get_doc_mentions(i)
+        token2 = self.annotator2.get_doc_tokens(i)
+        annotated2 = self.get_token_label(token2, mention2)
+        annotated_doc.append(annotated2)
 
-            mention3 = self.annotator3.get_doc_mentions(i)
-            token3 = self.annotator3.get_doc_tokens(i)
-            annotated3 = self.get_token_label(token3, mention3)
-            annotated_doc.append(annotated3)
+        mention3 = self.annotator3.get_doc_mentions(i)
+        token3 = self.annotator3.get_doc_tokens(i)
+        annotated3 = self.get_token_label(token3, mention3)
+        annotated_doc.append(annotated3)
 
-            mention4 = self.annotator4.get_doc_mentions(i)
-            token4 = self.annotator4.get_doc_tokens(i)
-            annotated4 = self.get_token_label(token4, mention4)
-            annotated_doc.append(annotated4)
+        mention4 = self.annotator4.get_doc_mentions(i)
+        token4 = self.annotator4.get_doc_tokens(i)
+        annotated4 = self.get_token_label(token4, mention4)
+        annotated_doc.append(annotated4)
 
-            doc_metrics = self.get_doc_metrics(annotated_doc)
-            annotated_corpus.append(doc_metrics)
-            annotated_doc.clear()
+        doc_metrics = self.get_doc_metrics(annotated_doc)
+        annotated_corpus.append(doc_metrics)
+        annotated_doc.clear()
 
         return annotated_corpus
 
@@ -137,28 +138,28 @@ class Ngram_Metrics :
         majority_label = ''
         majority_label_count = 0
 
-        for orig_annotator in group_annotated_doc:
+        for count1, orig_annotator in enumerate(group_annotated_doc):
             for orig_annotated_ngram in orig_annotator: 
                 token_labels.clear()                       
                 count_ngram = 1
-                orig_token = orig_annotated_ngram[0]                
+                orig_token = orig_annotated_ngram[0]            
                 orig_label = orig_annotated_ngram[1]
                 if type(orig_label) == list:
                     orig_label = self.list_To_String(orig_label)
                 token_labels.append(orig_label)
-                orig_ngram = orig_annotated_ngram[2]                
-                for other_annotator in group_annotated_doc:
-                    if orig_annotator != other_annotator:
+                orig_ngram = orig_annotated_ngram[2]            
+                for count2, other_annotator in enumerate(group_annotated_doc):
+                    if count1 != count2:
                         for other_annotated_ngram in other_annotator:
-                            if orig_ngram == other_annotated_ngram[2]:                                                              
-                                count_ngram += 1                                
+                            if orig_ngram == other_annotated_ngram[2]:                                                     
+                                count_ngram += 1         
                                 other_label = self.list_To_String(other_annotated_ngram[1])
-                                token_labels.append(other_label)                                
+                                token_labels.append(other_label)    
                                 break
                 if count_ngram < 2 and not (self.search_ngram_in_list(orig_ngram, doc_metrics)):
                     orig_ngram_ratio = count_ngram/ self.annotator_count
                     label_ratio = "N/A"
-                    single_ngram = [orig_ngram, orig_ngram_ratio, orig_token, orig_label, label_ratio]
+                    single_ngram = [orig_ngram, count_ngram, orig_ngram_ratio, orig_token, orig_label, label_ratio]
                     doc_metrics.append(single_ngram)
                 else :
                     if not self.search_ngram_in_list(orig_ngram, doc_metrics):
@@ -170,10 +171,28 @@ class Ngram_Metrics :
                         ngram_ratio = count_ngram/ self.annotator_count                                     
                         # Calculate the percentage ratio of majority label
                         label_ratio = (majority_label_count)/ len(token_labels)
-                        ngram_metrics = [orig_ngram, ngram_ratio, orig_token, majority_label, label_ratio]
+                        ngram_metrics = [orig_ngram, count_ngram, ngram_ratio, orig_token, majority_label, label_ratio]
                         doc_metrics.append(ngram_metrics)
                     else:
-                        continue
+                        found_ngram, index = self.search_ngram(orig_ngram, doc_metrics)
+                        if self.compare_ngram_metric(count_ngram, found_ngram):
+                            print(found_ngram)
+                            print("uprated")
+                            doc_metrics.pop(index)
+                            majority_label = multimode(token_labels)
+                            if type(majority_label) == list:
+                                majority_label = self.list_To_String(majority_label)
+                            majority_label_count = self.get_majority_label_count(token_labels, majority_label)
+                            # Calculate the percentage ratio of ngrams 
+                            ngram_ratio = count_ngram/ self.annotator_count                                     
+                            # Calculate the percentage ratio of majority label
+                            label_ratio = (majority_label_count)/ len(token_labels)
+                            ngram_metrics = [orig_ngram, count_ngram, ngram_ratio, orig_token, majority_label, label_ratio]
+                            print(ngram_metrics)
+                            print("---------------------------------------------")
+                            doc_metrics.append(ngram_metrics)
+                        else:
+                            continue                          
         return doc_metrics
     
     # def get_annotator_metrics(self, annotated_corpus):
@@ -189,6 +208,14 @@ class Ngram_Metrics :
     #         print("new doc")
     #         for token_agreement in annotated_document:
     #             print(token_agreement[2])
+
+    def search_ngram(self, ngram, doc_metrics):
+        for count, metric in enumerate(doc_metrics):
+            if ngram in metric:
+                return doc_metrics[count], count
+    
+    def compare_ngram_metric(self, count_ngram, ngram2):
+        return (count_ngram > ngram2[1])
 
     def search_ngram_in_list(self, orig_ngram:list, doc_metrics: list) -> bool :
         for ngrams in doc_metrics:
