@@ -76,8 +76,9 @@ class Label_Metrics :
             start = ment["start"]
             end = ment["end"]
             token = tokens[start:end]
-            label = ment["labels"]
             token = self.list_To_String(token)
+            label = ment["labels"]
+            label = self.list_To_String(label)
             annotations_list1 = [token, label, start, end]    
             annotations_list2.append(annotations_list1)    
         return annotations_list2
@@ -93,7 +94,7 @@ class Label_Metrics :
         annotated_doc = []
         annotated_corpus = []
 
-        for i in self.same_docs:
+        for i in self.same_docs:        
             mention1 = self.annotator1.get_doc_mentions(i)
             token1 = self.annotator1.get_doc_tokens(i)
             annotated1 = self.get_token_label(token1, mention1)  
@@ -139,36 +140,57 @@ class Label_Metrics :
                 group_annotated_doc[i] = self.add_padding(longest_tokens, group_annotated_doc[i])
         longest_tokens_annotator = group_annotated_doc[number]
         group_annotated_doc.pop(number)
-        for i in range(len(longest_tokens_annotator)):
+        for i in range(len(longest_tokens_annotator)):            
             longest_token = longest_tokens_annotator[i][0]
-            longest_label = self.list_To_String(longest_tokens_annotator[i][1])
+            longest_label = longest_tokens_annotator[i][1]
             token_labels.append(longest_label)
             for annotator in group_annotated_doc:
                 for annotated_token in annotator:
-                     if longest_token in annotated_token[0]:
-                        label = self.list_To_String(annotated_token[1]) 
+                    if longest_token in annotated_token[0]:
+                        label = annotated_token[1]
                         token_labels.append(label)
-                        break
-            majority_label = multimode(token_labels)
+                        break            
+            majority_label = self.list_To_String(multimode(token_labels))            
             all_labels_same = self.get_all_labels_same(token_labels)
             token_majority_label_metric = [longest_token, majority_label, all_labels_same]
             token_labels.clear()
             doc_metrics.append(token_majority_label_metric)
         return doc_metrics
     
-    def get_annotator_metrics(self, annotated_corpus):
+    def get_label_metrics(self, annotated_corpus:list) -> int:
         """
-            Class for obtaining the individual annotator label metrics 
+            Gets the label category metrics for corpus 
 
             Parameters:
-                annotators :
-                    Instance of Annotator class for a person
-              
+                annotated_corpus :
+                    The annotated corpus containing processed label metrics
+          
+            Returns : 
+                The calculated metrics for all the label             
         """
-        for annotated_document in annotated_corpus:
-            print("new doc")
-            for token_agreement in annotated_document:
-                print(token_agreement[2])
+        label_list = self.get_all_labels(annotated_corpus)
+        label_metrics_list = []
+        counter_false = 0
+        counter_true = 0
+        for label in label_list :
+            for annotated_document in annotated_corpus:
+                for token_agreement in annotated_document:
+                    if token_agreement[1] == label:
+                        if token_agreement[2] == True:
+                            counter_true += 1
+                        if token_agreement[2] == False:
+                            counter_false += 1
+            label_metrics = [label, counter_true, counter_false]
+            label_metrics_list.append(label_metrics)
+        return label_metrics_list
+
+    def get_all_labels(self, annotated_corpus:list) -> list:
+        label_list = []
+        for document_metrics in annotated_corpus :
+            for metrics in document_metrics:
+                if metrics[1] not in label_list:
+                    label_list.append(metrics[1])
+        return label_list
  
     def get_all_labels_same(self, Label_List: list) -> bool:
         """
