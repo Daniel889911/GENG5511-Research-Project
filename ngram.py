@@ -1,5 +1,4 @@
 from annotator import Annotator
-from collections import Counter
 from statistics import multimode
 
 class Ngram_Metrics :

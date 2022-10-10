@@ -1,7 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-import numpy as np
 import seaborn as sns
 
 def create_pie_chart(label_list):
