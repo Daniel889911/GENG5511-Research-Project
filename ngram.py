@@ -228,7 +228,11 @@ class Ngram_Metrics :
             else :                
                 label_average_value = label_value/ count_label
             ngram_average_value = ngram_value/ count_ngram
-            label_ngram_metric = [label, label_average_value, ngram, ngram_average_value]
+            if label_average_value == "N/A":
+                continue
+            else :
+                overall_average_value = (ngram_average_value + label_average_value)/2
+            label_ngram_metric = [label, ngram, overall_average_value]
             metrics_list.append(label_ngram_metric)
 
         return metrics_list
