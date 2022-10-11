@@ -191,54 +191,6 @@ class Ngram_Individual_Metrics :
                             continue                          
         return doc_metrics
     
-    def get_label_ngram_metrics(self, corpus_metrics: list) -> list:
-        """
-            Get the label and ngram metrics
-
-            Parameters:
-                corpus_metrics :
-                    The corpus metrics
-            
-            Returns :
-                The list of calculated values of label and ngram metrics for graphing
-              
-        """
-        labels_list = self.get_all_labels()
-        ngram_list = self.get_all_ngrams()
-        print(ngram_list)
-
-        metrics_list = []
-
-        for label in labels_list:
-            for ngram in ngram_list:
-                for document_metric in corpus_metrics:
-                    for ngram_metric in document_metric:
-                        if ngram_metric[4] == label and ngram_metric[0][2] == ngram:                                  
-                            ngram_value = 0
-                            label_value = 0
-                            count_label = 0
-                            count_ngram = 0
-                            ngram_value += ngram_metric[2]
-                            count_ngram += 1
-                            if ngram_metric[5] == "N/A":
-                                continue
-                            else :
-                                label_value += int(ngram_metric[5])
-                                count_label += 1
-                if count_label == 0 :
-                    label_average_value = "N/A"
-                else :                
-                    label_average_value = label_value/ count_label
-                ngram_average_value = ngram_value/ count_ngram
-                if label_average_value == "N/A":
-                    continue
-                else :
-                    overall_average_value = (ngram_average_value + label_average_value)/2
-                label_ngram_metric = [label, ngram, overall_average_value]
-                metrics_list.append(label_ngram_metric)
-
-        return metrics_list
-
     def get_individual_annotations(self) -> list:
         annotated_doc= []
         for i in self.same_docs:    
@@ -252,7 +204,7 @@ class Ngram_Individual_Metrics :
 
         individual_list = self.get_individual_annotations()
         group_list = self.get_corpus_metrics()
-        number_group_docs = self.get_number_group_docs
+        number_group_docs = self.get_number_group_docs()
 
         ind_count = 0
 
@@ -262,21 +214,23 @@ class Ngram_Individual_Metrics :
                     for count3, ind_metrics in enumerate(ind_documents):
                         for count4, group_metrics in enumerate(group_documents):
                             if count3 == count4:
-                                if ind_metrics[0] in group_metrics:
-                                    ind_count += 1
-        ind_stats = [ind_count, number_group_docs]
+                                #print(ind_metrics[2])
+                                #print(group_metrics[0])
+                                if ind_metrics[2] == group_metrics[0] and group_metrics[2] >= 0.5:
+                                    ind_count += 1       
+        ind_stats = [self.annotator1.name, ind_count, number_group_docs-ind_count]
         return ind_stats
-    def get_number_group_docs(self, corpus_metrics) -> int:       
+
+    def get_number_group_docs(self) -> int:       
 
         group_list = self.get_corpus_metrics()
 
         number = 0
         new_number = 0
 
-        for documents in group_list:
-            for metrics in documents:
-                number = len(metrics)
-                new_number += number
+        for document in group_list:
+            number = len(document)
+            new_number += number
         return new_number
 
     def get_all_labels(self) -> list:

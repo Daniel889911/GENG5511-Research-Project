@@ -204,7 +204,6 @@ class Ngram_Metrics :
         """
         labels_list = self.get_all_labels()
         ngram_list = self.get_all_ngrams()
-        print(ngram_list)
 
         metrics_list = []
 
@@ -237,10 +236,7 @@ class Ngram_Metrics :
                 metrics_list.append(label_ngram_metric)
 
         return metrics_list
-
-    def get_individual_ngram_metrics(self) ->list:
-        
-    
+  
     def get_all_labels(self) -> list:
         """
             Gets all the labels in the annotated corpus 
