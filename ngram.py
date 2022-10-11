@@ -203,36 +203,38 @@ class Ngram_Metrics :
               
         """
         labels_list = self.get_all_labels()
+        ngram_list = self.get_all_ngrams()
+        print(ngram_list)
 
         metrics_list = []
 
         for label in labels_list:
-            for document_metric in corpus_metrics:
-                for ngram_metric in document_metric:
-                    if ngram_metric[4] == label:
-                        ngram_value = 0
-                        label_value = 0
-                        count_label = 0
-                        count_ngram = 0
-                        ngram = ngram_metric[0][2]
-                        ngram_value += ngram_metric[2]
-                        count_ngram += 1
-                        if ngram_metric[5] == "N/A":
-                            continue
-                        else :
-                            label_value += int(ngram_metric[5])
-                            count_label += 1
-            if count_label == 0 :
-                label_average_value = "N/A"
-            else :                
-                label_average_value = label_value/ count_label
-            ngram_average_value = ngram_value/ count_ngram
-            if label_average_value == "N/A":
-                continue
-            else :
-                overall_average_value = (ngram_average_value + label_average_value)/2
-            label_ngram_metric = [label, ngram, overall_average_value]
-            metrics_list.append(label_ngram_metric)
+            for ngram in ngram_list:
+                for document_metric in corpus_metrics:
+                    for ngram_metric in document_metric:
+                        if ngram_metric[4] == label and ngram_metric[0][2] == ngram:                                  
+                            ngram_value = 0
+                            label_value = 0
+                            count_label = 0
+                            count_ngram = 0
+                            ngram_value += ngram_metric[2]
+                            count_ngram += 1
+                            if ngram_metric[5] == "N/A":
+                                continue
+                            else :
+                                label_value += int(ngram_metric[5])
+                                count_label += 1
+                if count_label == 0 :
+                    label_average_value = "N/A"
+                else :                
+                    label_average_value = label_value/ count_label
+                ngram_average_value = ngram_value/ count_ngram
+                if label_average_value == "N/A":
+                    continue
+                else :
+                    overall_average_value = (ngram_average_value + label_average_value)/2
+                label_ngram_metric = [label, ngram, overall_average_value]
+                metrics_list.append(label_ngram_metric)
 
         return metrics_list
     
@@ -252,8 +254,25 @@ class Ngram_Metrics :
             for metrics in document_metrics:
                 if metrics[4] not in label_list:
                     label_list.append(metrics[4])
-
         return label_list
+
+    def get_all_ngrams(self) -> list:
+        """
+            Gets all the labels in the annotated corpus 
+                  
+            Returns:
+                All the labels in the annotated corpus in a list 
+              
+        """
+        ngram_list = []
+
+        annotated_corpus = self.get_corpus_metrics()
+
+        for document_metrics in annotated_corpus :
+            for metrics in document_metrics:
+                if metrics[0][2] not in ngram_list:
+                    ngram_list.append(metrics[0][2])
+        return ngram_list
 
     def search_ngram(self, ngram: list, doc_metrics: list):
         """
