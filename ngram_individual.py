@@ -1,7 +1,7 @@
 from annotator import Annotator
 from statistics import multimode
 
-class Ngram_Metrics :
+class Ngram_Individual_Metrics :
 
     def __init__(self, annotator1 : Annotator, annotator2:Annotator, annotator3:Annotator, annotator4:Annotator):
         """
@@ -16,6 +16,7 @@ class Ngram_Metrics :
         self.annotator2 = annotator2
         self.annotator3 = annotator3
         self.annotator4 = annotator4
+        self.annotator_list = [self.annotator1, self.annotator2, self.annotator3, self.annotator4]
         self.annotator1_doc_ids = annotator1.get_doc_idxs()
         self.annotator2_doc_ids = annotator2.get_doc_idxs()
         self.annotator3_doc_ids = annotator3.get_doc_idxs()
@@ -238,9 +239,46 @@ class Ngram_Metrics :
 
         return metrics_list
 
-    def get_individual_ngram_metrics(self) ->list:
-        
+    def get_individual_annotations(self) -> list:
+        annotated_doc= []
+        for i in self.same_docs:    
+            mention = self.annotator1.get_doc_mentions(i)
+            token = self.annotator1.get_doc_tokens(i)
+            annotated = self.get_token_label(token, mention)  
+            annotated_doc.append(annotated)
+        return annotated_doc
     
+    def get_individual_ngram_metrics(self) -> list:
+
+        individual_list = self.get_individual_annotations()
+        group_list = self.get_corpus_metrics()
+        number_group_docs = self.get_number_group_docs
+
+        ind_count = 0
+
+        for count1, ind_documents in enumerate(individual_list):
+            for count2, group_documents in enumerate(group_list) :
+                if count1 == count2 :
+                    for count3, ind_metrics in enumerate(ind_documents):
+                        for count4, group_metrics in enumerate(group_documents):
+                            if count3 == count4:
+                                if ind_metrics[0] in group_metrics:
+                                    ind_count += 1
+        ind_stats = [ind_count, number_group_docs]
+        return ind_stats
+    def get_number_group_docs(self, corpus_metrics) -> int:       
+
+        group_list = self.get_corpus_metrics()
+
+        number = 0
+        new_number = 0
+
+        for documents in group_list:
+            for metrics in documents:
+                number = len(metrics)
+                new_number += number
+        return new_number
+
     def get_all_labels(self) -> list:
         """
             Gets all the labels in the annotated corpus 
