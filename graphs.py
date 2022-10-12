@@ -34,7 +34,7 @@ def create_pie_chart(label_list):
                                         colors = colors,
                                         startangle = 90,
                                         wedgeprops = wp,
-                                        textprops = dict(color ="yellow"))
+                                        textprops = dict(color ="black"))
         
         # Adding legend
         ax.legend(wedges, label,
@@ -78,7 +78,7 @@ def create_pie_chart_individual_ngram(individual_ngram_metrics):
                                         colors = colors,
                                         startangle = 90,
                                         wedgeprops = wp,
-                                        textprops = dict(color ="yellow"))
+                                        textprops = dict(color ="black"))
         
         # Adding legend
         ax.legend(wedges, label,
