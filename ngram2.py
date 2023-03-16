@@ -1,7 +1,7 @@
 from annotator import Annotator
 from statistics import multimode
 
-class NgramIndividualMetrics :
+class NgramMetrics :
 
     def __init__(self, *args):
         """
@@ -54,7 +54,7 @@ class NgramIndividualMetrics :
     
     def get_token_label(self, tokens:list, mentions:list) -> list:
         """
-            Gets all the separated tokens with labels into a list 
+            Gets the  
 
             Parameters:
                 tokens :
@@ -131,8 +131,11 @@ class NgramIndividualMetrics :
         """
         token_labels = []
         doc_metrics = []
+        
         majority_label = ''
         majority_label_count = 0
+        partial_ngram = 0
+        full_ngram = 0
 
         for count1, orig_annotator in enumerate(group_annotated_doc):
             for orig_annotated_ngram in orig_annotator: 
@@ -178,7 +181,7 @@ class NgramIndividualMetrics :
                                 majority_label = self.list_To_String(majority_label)
                             majority_label_count = self.get_majority_label_count(token_labels, majority_label)
                             # Calculate the percentage ratio of ngrams 
-                            ngram_ratio = count_ngram/ self.annotator_count                                     
+                            ngram_ratio = count_ngram/ self.annotator_count                                 
                             # Calculate the percentage ratio of majority label
                             label_ratio = (majority_label_count)/ len(token_labels)
                             ngram_metrics = [orig_ngram, count_ngram, ngram_ratio, orig_token, majority_label, label_ratio]
@@ -187,46 +190,53 @@ class NgramIndividualMetrics :
                             continue                          
         return doc_metrics
     
-    def get_individual_annotations(self) -> list:
-        annotated_doc= []
-        for i in self.same_docs:    
-            mention = self.annotator1.get_doc_mentions(i)
-            token = self.annotator1.get_doc_tokens(i)
-            annotated = self.get_token_label(token, mention)  
-            annotated_doc.append(annotated)
-        return annotated_doc
-    
-    def get_individual_ngram_metrics(self) -> list:
+    def get_label_ngram_metrics(self, corpus_metrics: list) -> list:
+        """
+            Get the label and ngram metrics
 
-        individual_list = self.get_individual_annotations()
-        group_list = self.get_corpus_metrics()
-        number_group_docs = self.get_number_group_docs()
+            Parameters:
+                corpus_metrics :
+                    The corpus metrics
+            
+            Returns :
+                The list of calculated values of label and ngram metrics for graphing
+              
+        """
+        labels_list = self.get_all_labels()
+        ngram_list = self.get_all_ngrams()
 
-        ind_count = 0
+        metrics_list = []
 
-        for count1, ind_documents in enumerate(individual_list):
-            for count2, group_documents in enumerate(group_list) :
-                if count1 == count2 :
-                    for count3, ind_metrics in enumerate(ind_documents):
-                        for count4, group_metrics in enumerate(group_documents):
-                            if count3 == count4:
-                                if ind_metrics[2] == group_metrics[0] and group_metrics[2] >= 0.5:
-                                    ind_count += 1       
-        ind_stats = [self.annotator1.name, ind_count, number_group_docs-ind_count]
-        return ind_stats
+        for label in labels_list:
+            for ngram in ngram_list:
+                for document_metric in corpus_metrics:
+                    for ngram_metric in document_metric:
+                        if ngram_metric[4] == label and ngram_metric[0][2] == ngram:                                  
+                            ngram_value = 0
+                            label_value = 0
+                            count_label = 0
+                            count_ngram = 0
+                            ngram_value += ngram_metric[2]
+                            count_ngram += 1
+                            if ngram_metric[5] == "N/A":
+                                continue
+                            else :
+                                label_value += int(ngram_metric[5])
+                                count_label += 1
+                if count_label == 0 :
+                    label_average_value = "N/A"
+                else :                
+                    label_average_value = label_value/ count_label
+                ngram_average_value = ngram_value/ count_ngram
+                if label_average_value == "N/A":
+                    continue
+                else :
+                    overall_average_value = (ngram_average_value + label_average_value)/2
+                label_ngram_metric = [label, ngram, overall_average_value]
+                metrics_list.append(label_ngram_metric)
 
-    def get_number_group_docs(self) -> int:       
-
-        group_list = self.get_corpus_metrics()
-
-        number = 0
-        new_number = 0
-
-        for document in group_list:
-            number = len(document)
-            new_number += number
-        return new_number
-
+        return metrics_list
+  
     def get_all_labels(self) -> list:
         """
             Gets all the labels in the annotated corpus 
@@ -244,13 +254,35 @@ class NgramIndividualMetrics :
                 if metrics[4] not in label_list:
                     label_list.append(metrics[4])
         return label_list
+    
+    def get_ngram_metrics(self):
+        ngram_list = self.get_all_ngrams()
+        annotated_corpus = self.get_corpus_metrics()
+
+        partial_ngram = 0
+        full_ngram = 0
+
+        ngram_metrics_list = []
+
+        for ngram in ngram_list:
+            for document in annotated_corpus:
+                for doc_metrics in document :
+                    if ngram == doc_metrics[0][2]:
+                        if doc_metrics[2] == 1:
+                            full_ngram += 1
+                        else :
+                            partial_ngram += 1
+            ngram_metric = [ngram, full_ngram, partial_ngram]
+            ngram_metrics_list.append(ngram_metric)
+
+        return ngram_metrics_list
 
     def get_all_ngrams(self) -> list:
         """
-            Gets all the labels in the annotated corpus 
+            Gets all the ngrams in the annotated corpus 
                   
             Returns:
-                All the labels in the annotated corpus in a list 
+                All the ngrams in the annotated corpus in a list 
               
         """
         ngram_list = []

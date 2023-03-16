@@ -3,7 +3,7 @@ from statistics import multimode
 
 class Label_Metrics :
 
-    def __init__(self, annotator1 : Annotator, annotator2:Annotator, annotator3:Annotator, annotator4:Annotator):
+    def __init__(self, *args):
         """
             Class for obtaining the annotator individual label metrics 
 
@@ -12,16 +12,15 @@ class Label_Metrics :
                     Instance of Annotator class for a person
               
         """
-        self.annotator1 = annotator1
-        self.annotator2 = annotator2
-        self.annotator3 = annotator3
-        self.annotator4 = annotator4
-        self.annotator1_doc_ids = annotator1.get_doc_idxs()
-        self.annotator2_doc_ids = annotator2.get_doc_idxs()
-        self.annotator3_doc_ids = annotator3.get_doc_idxs()
-        self.annotator4_doc_ids = annotator4.get_doc_idxs()
+        self.annotator_list = list(args)
+        self.annotator_count = len(self.annotator_list)
+        for i in range(len(self.annotator_list)):
+            setattr(self, f'annotator{i + 1}', self.annotator_list[i])
+        for i in range(len(self.annotator_list)):
+            setattr(self, f'annotator{i + 1}_doc_ids', self.annotator_list[i].get_doc_idxs())
         self.same_docs = []
         self.annotated_corpus = []
+
 
     def get_same_doc_ids(self) : 
         """
