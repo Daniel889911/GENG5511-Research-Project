@@ -14,10 +14,7 @@ class Label_Metrics :
         """
         self.annotator_list = list(args)
         self.annotator_count = len(self.annotator_list)
-        for i in range(len(self.annotator_list)):
-            setattr(self, f'annotator{i + 1}', self.annotator_list[i])
-        for i in range(len(self.annotator_list)):
-            setattr(self, f'annotator{i + 1}_doc_ids', self.annotator_list[i].get_doc_idxs())
+        self.annotator_numbered_list = []
         self.same_docs = []
         self.annotated_corpus = []
 
@@ -33,17 +30,23 @@ class Label_Metrics :
         # find shortest document
         shortest_doc_length = float('inf')    
         shortest_doc_id = 0
-        for i in range(len(self.annotator_list)):
-            doc_length = f'self.annotator{i+1}'
+        shortest_annotator = None
+        doc_idxs1 = []
+        doc_idxs2 = []
+        for i, annotator in enumerate(self.annotator_list):
+            doc_length = len(annotator.get_doc_idxs())
             if doc_length < shortest_doc_length:
                 shortest_doc_length = doc_length
-                shortest_doc = f'self.annotator{i+1}'
-                shortest_doc_id = i+1
+                shortest_annotator = self.annotator_list[i]
+                shortest_doc_id = i
+        doc_idxs1 = shortest_annotator.get_doc_idxs()
+        self.same_docs = set(doc_idxs1)
         # compare the shortest document with all the other documents to get same documents
-        for i in range(len(self.annotator_list)):
-            if shortest_doc_id != i+1:
-                self.same_docs = self.get_common_files(f'self.annotator{i+1}',shortest_doc)
-        return self.same_docs
+        for i, annotator in enumerate(self.annotator_list):            
+            if shortest_doc_id != i:
+                doc_idxs2 = annotator.get_doc_idxs()
+                self.same_docs = self.same_docs.intersection(doc_idxs2)
+        return list(self.same_docs)
     
     def get_common_files(self, doc_ids1 : list, doc_ids2: list) -> list:
         """
@@ -101,35 +104,22 @@ class Label_Metrics :
               
         """
         annotated_doc = []
+        annotated_corpus = []
 
         self.get_same_doc_ids()
 
-        for i in self.same_docs:        
-            mention1 = self.annotator1.get_doc_mentions(i)
-            token1 = self.annotator1.get_doc_tokens(i)
-            annotated1 = self.get_token_label(token1, mention1)  
-            annotated_doc.append(annotated1)
-
-            mention2 = self.annotator2.get_doc_mentions(i)
-            token2 = self.annotator2.get_doc_tokens(i)
-            annotated2 = self.get_token_label(token2, mention2)
-            annotated_doc.append(annotated2)
-
-            mention3 = self.annotator3.get_doc_mentions(i)
-            token3 = self.annotator3.get_doc_tokens(i)
-            annotated3 = self.get_token_label(token3, mention3)
-            annotated_doc.append(annotated3)
-
-            mention4 = self.annotator4.get_doc_mentions(i)
-            token4 = self.annotator4.get_doc_tokens(i)
-            annotated4 = self.get_token_label(token4, mention4)
-            annotated_doc.append(annotated4)
-
-            doc_metrics = self.get_doc_metrics(annotated_doc)
-            self.annotated_corpus.append(doc_metrics)
+        for i in self.same_docs:  
+            for annotator in self.annotator_list:
+                mention = annotator.get_doc_mentions(i)
+                token = annotator.get_doc_tokens(i)
+                annotated = self.get_token_label(token, mention)
+                annotated_doc.append(annotated)
+            single_doc_metrics = self.get_single_doc_metrics(annotated_doc)
+            annotated_corpus.append(single_doc_metrics)
             annotated_doc.clear()
+        return annotated_corpus
 
-    def get_doc_metrics(self, group_annotated_doc: list) -> list :
+    def get_single_doc_metrics(self, group_annotated_doc: list) -> list :
         """
             Gets the calculated label corpus metrics from all the same documents from the group
 

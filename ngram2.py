@@ -31,17 +31,23 @@ class NgramMetrics :
         # find shortest document
         shortest_doc_length = float('inf')    
         shortest_doc_id = 0
-        for i in range(len(self.annotator_list)):
-            doc_length = f'self.annotator{i+1}'
+        shortest_annotator = None
+        doc_idxs1 = []
+        doc_idxs2 = []
+        for i, annotator in enumerate(self.annotator_list):
+            doc_length = len(annotator.get_doc_idxs())
             if doc_length < shortest_doc_length:
                 shortest_doc_length = doc_length
-                shortest_doc = f'self.annotator{i+1}'
-                shortest_doc_id = i+1
+                shortest_annotator = self.annotator_list[i]
+                shortest_doc_id = i
+        doc_idxs1 = shortest_annotator.get_doc_idxs()
+        self.same_docs = set(doc_idxs1)
         # compare the shortest document with all the other documents to get same documents
-        for i in range(len(self.annotator_list)):
-            if shortest_doc_id != i+1:
-                self.same_docs = self.get_common_files(f'self.annotator{i+1}',shortest_doc)
-        return self.same_docs
+        for i, annotator in enumerate(self.annotator_list):            
+            if shortest_doc_id != i:
+                doc_idxs2 = annotator.get_doc_idxs()
+                self.same_docs = self.same_docs.intersection(doc_idxs2)
+        return list(self.same_docs)
     
     def get_common_files(self, doc_ids1 : list, doc_ids2: list) -> list:
         """

@@ -92,5 +92,4 @@ class Annotator:
             ids = self.annotations[idx]["doc_idx"]
             if ids == doc_idx:
                 return self.annotations[idx]["tokens"]
-   
-            
+           
