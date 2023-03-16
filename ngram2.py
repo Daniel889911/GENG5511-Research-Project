@@ -99,7 +99,7 @@ class NgramMetrics :
             annotated_doc.clear()
         return annotated_corpus
 
-    def get_doc_metrics(self, group_annotated_doc: list) -> list :
+    def get_single_doc_metrics(self, group_annotated_doc: list) -> list :
         """
             Gets the calculated label corpus metrics from all the same documents from the group
 
