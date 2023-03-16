@@ -18,7 +18,6 @@ class Label_Metrics :
         self.same_docs = []
         self.annotated_corpus = []
 
-
     def get_same_doc_ids(self) : 
         """
             Gets all the same annotated document ids for all the annotators
@@ -47,26 +46,6 @@ class Label_Metrics :
                 doc_idxs2 = annotator.get_doc_idxs()
                 self.same_docs = self.same_docs.intersection(doc_idxs2)
         return list(self.same_docs)
-    
-    def get_common_files(self, doc_ids1 : list, doc_ids2: list) -> list:
-        """
-            Gets all the same document ids for two annotators
-
-            Parameters:
-                doc_idx :
-                    The document ids of two annotators
-
-            Returns:
-                The same document ids shared by two annotators 
-              
-        """
-        doc_list = []
-        for i in range(len(doc_ids1)):
-            for j in range(len(doc_ids2)):
-                if doc_ids1[i] == doc_ids2[j]:
-                    doc_list.append(doc_ids1[i])  
-                    break
-        return doc_list 
     
     def get_token_label(self, tokens:list, mentions: dict) -> list:
         """
@@ -104,7 +83,6 @@ class Label_Metrics :
               
         """
         annotated_doc = []
-        annotated_corpus = []
 
         self.get_same_doc_ids()
 
@@ -115,9 +93,8 @@ class Label_Metrics :
                 annotated = self.get_token_label(token, mention)
                 annotated_doc.append(annotated)
             single_doc_metrics = self.get_single_doc_metrics(annotated_doc)
-            annotated_corpus.append(single_doc_metrics)
+            self.annotated_corpus.append(single_doc_metrics)
             annotated_doc.clear()
-        return annotated_corpus
 
     def get_single_doc_metrics(self, group_annotated_doc: list) -> list :
         """

@@ -47,27 +47,8 @@ class NgramMetrics :
             if shortest_doc_id != i:
                 doc_idxs2 = annotator.get_doc_idxs()
                 self.same_docs = self.same_docs.intersection(doc_idxs2)
-        return list(self.same_docs)
-    
-    def get_common_files(self, doc_ids1 : list, doc_ids2: list) -> list:
-        """
-            Gets all the same document ids for two annotators
-
-            Parameters:
-                doc_idx :
-                    The document ids of two annotators
-            Returns:
-                The list of same document ids shared by two annotators 
-              
-        """
-        doc_list = []
-        for i in range(len(doc_ids1)):
-            for j in range(len(doc_ids2)):
-                if doc_ids1[i] == doc_ids2[j]:
-                    doc_list.append(doc_ids1[i])  
-                    break
-        return doc_list 
-    
+        return list(self.same_docs)    
+  
     def get_token_label(self, tokens:list, mentions:list) -> list:
         """
             Gets the  
@@ -107,29 +88,14 @@ class NgramMetrics :
 
         self.get_same_doc_ids()
 
-        for i in self.same_docs:    
-            mention1 = self.annotator1.get_doc_mentions(i)
-            token1 = self.annotator1.get_doc_tokens(i)
-            annotated1 = self.get_token_label(token1, mention1)  
-            annotated_doc.append(annotated1)
-
-            mention2 = self.annotator2.get_doc_mentions(i)
-            token2 = self.annotator2.get_doc_tokens(i)
-            annotated2 = self.get_token_label(token2, mention2)
-            annotated_doc.append(annotated2)
-
-            mention3 = self.annotator3.get_doc_mentions(i)
-            token3 = self.annotator3.get_doc_tokens(i)
-            annotated3 = self.get_token_label(token3, mention3)
-            annotated_doc.append(annotated3)
-
-            mention4 = self.annotator4.get_doc_mentions(i)
-            token4 = self.annotator4.get_doc_tokens(i)
-            annotated4 = self.get_token_label(token4, mention4)
-            annotated_doc.append(annotated4)
-
-            doc_metrics = self.get_doc_metrics(annotated_doc)
-            annotated_corpus.append(doc_metrics)
+        for i in self.same_docs:  
+            for annotator in self.annotator_list:
+                mention = annotator.get_doc_mentions(i)
+                token = annotator.get_doc_tokens(i)
+                annotated = self.get_token_label(token, mention)
+                annotated_doc.append(annotated)
+            single_doc_metrics = self.get_single_doc_metrics(annotated_doc)
+            annotated_corpus.append(single_doc_metrics)
             annotated_doc.clear()
         return annotated_corpus
 
