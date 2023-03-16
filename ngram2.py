@@ -28,9 +28,19 @@ class NgramMetrics :
                 The same annotated document ids annotated by all the annotators 
               
         """       
-        list1 = self.get_common_files(self.annotator1_doc_ids,self.annotator2_doc_ids)
-        list2 = self.get_common_files(self.annotator3_doc_ids,self.annotator4_doc_ids)
-        self.same_docs = self.get_common_files(list1,list2)
+        # find shortest document
+        shortest_doc_length = float('inf')    
+        shortest_doc_id = 0
+        for i in range(len(self.annotator_list)):
+            doc_length = f'self.annotator{i+1}'
+            if doc_length < shortest_doc_length:
+                shortest_doc_length = doc_length
+                shortest_doc = f'self.annotator{i+1}'
+                shortest_doc_id = i+1
+        # compare the shortest document with all the other documents to get same documents
+        for i in range(len(self.annotator_list)):
+            if shortest_doc_id != i+1:
+                self.same_docs = self.get_common_files(f'self.annotator{i+1}',shortest_doc)
         return self.same_docs
     
     def get_common_files(self, doc_ids1 : list, doc_ids2: list) -> list:
