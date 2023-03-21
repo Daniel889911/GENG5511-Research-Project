@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
-from irrCAC.raw import CAC
+import krippendorff
 from annotator import Annotator
-
+from statistics import multimode
 
 class Label_Metrics :
 
@@ -110,27 +110,62 @@ class Label_Metrics :
         return annotated_df
 
 
-    def create_krippendorff_alpha_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators as columns
-        krippendorff_alpha_table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
+    def create_krippendorf_alpha_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
+        # Pivot the annotated_df DataFrame to create a table with annotators as rows and tokens as columns
+        krippendorff_alpha_table = annotated_df.pivot_table(index='annotator_id', columns='token', values='label', aggfunc='first')
 
         # Ensure the table contains dtype 'object' and missing values are replaced with None
         krippendorff_alpha_table = krippendorff_alpha_table.astype(object).where(pd.notnull(krippendorff_alpha_table), None)
 
         return krippendorff_alpha_table
 
-    def calculate_krippendorff_alpha_for_all_docs(self) -> float:
+    def convert_krippendorf_alpha_table_to_list_of_lists(self, krippendorff_alpha_table: pd.DataFrame) -> list:
         """
-            Calculate Krippendorff's alpha for all documents
+            Convert a DataFrame to a list of lists
+
+            Parameters:
+                df :
+                    The input DataFrame
 
             Returns:
-                The Krippendorff's alpha value for all documents
+                A list of lists representation of the input DataFrame
+        """
+        return krippendorff_alpha_table.values.tolist()
+
+    def convert_labels_to_integers(self, data_list: list) -> list:
+        """
+            Convert labels in a list of lists to integers and replace None with NaN
+
+            Parameters:
+                data_list :
+                    The input list of lists
+
+            Returns:
+                A list of lists with labels converted to integers and None replaced with NaN
+        """
+        # Get unique labels from the data_list (excluding None)
+        unique_labels = set(x for sublist in data_list for x in sublist if x is not None)
+
+        # Create a mapping of labels to integers
+        label_to_int = {label: idx for idx, label in enumerate(unique_labels, 1)}
+
+        # Apply the mapping to the list of lists
+        converted_data_list = [[label_to_int.get(x, np.nan) if x is not None else np.nan for x in sublist] for sublist in data_list]
+
+        return converted_data_list
+
+    def calculate_krippendorf_alpha_for_all_docs(self) -> float:
+        """
+            Calculate Fleiss Kappa for all documents
+
+            Returns:
+                The Fleiss Kappa value for all documents
         """
         # Get the same document ids annotated by all the annotators
         same_docs = self.get_same_doc_ids()
 
         # Initialize a list to store the Krippendorff's alpha values for each document
-        krippendorff_alpha_values = []
+        fleiss_kappa_values = []
 
         # Loop through all the documents
         for doc_idx in same_docs:
@@ -138,21 +173,24 @@ class Label_Metrics :
             annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
 
             # Create a table with annotators as rows and tokens as columns
-            krippendorff_alpha_table = self.create_krippendorff_alpha_table(annotated_df)
+            fleiss_kappa_table = self.create_krippendorf_alpha_table(annotated_df)
 
-            # Initialise CAC
-            cac_krippendorff = CAC(krippendorff_alpha_table)
+            # Convert the table to a list of lists
+            data_list = self.convert_krippendorf_alpha_table_to_list_of_lists(fleiss_kappa_table)
+
+            # Convert labels to integers and replace None with NaN
+            converted_data_list = self.convert_labels_to_integers(data_list)
 
             # Calculate Krippendorff's alpha
-            krippendorff_values = cac_krippendorff.krippendorff()
-            krippendorff_alpha = krippendorff_values['est']['coefficient_value']
+            fleiss_kappa = krippendorff.alpha(converted_data_list, level_of_measurement='nominal')
+
             # Add the Krippendorff's alpha value to the list
-            krippendorff_alpha_values.append(krippendorff_alpha)
+            fleiss_kappa_values.append(fleiss_kappa)
 
         # Calculate the mean Krippendorff's alpha value
-        mean_krippendorff_alpha = np.mean(krippendorff_alpha_values)
+        mean_fleiss_kappa = np.mean(fleiss_kappa_values)
 
-        return mean_krippendorff_alpha
+        return mean_fleiss_kappa
 
     def list_To_String(self, List: list) -> str:
         """

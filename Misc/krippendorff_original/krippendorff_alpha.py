@@ -154,7 +154,7 @@ class Label_Metrics :
 
         return converted_data_list
 
-    def calculate_fleiss_kappa_for_all_docs(self) -> float:
+    def calculate_krippendorf_alpha_for_all_docs(self) -> float:
         """
             Calculate Fleiss Kappa for all documents
 
