@@ -119,7 +119,7 @@ class Label_Metrics :
 
         return krippendorff_alpha_table
 
-    def calculate_coefficient_for_all_docs(self, coefficient: str ) -> float:
+    def calculate_coefficient_for_all_docs(self) -> float:
         """
             Calculate Coefficients for all documents
 
@@ -130,9 +130,10 @@ class Label_Metrics :
         same_docs = self.get_same_doc_ids()
 
         # Initialize a list to store the Krippendorff's alpha values for each document
-        coefficient_values = []
-        mean_coefficient_value= []
-
+        krippendorff_alpha_values_list = []
+        fleiss_kappa_values_list = []
+        gwets_values_list = []
+        
         # Loop through all the documents
         for doc_idx in same_docs:
             # Get the tokens and labels for a doc_idx for all the annotators
@@ -144,16 +145,31 @@ class Label_Metrics :
             # Initialise CAC
             cac_coefficient = CAC(coefficients_table)
 
-            # Calculate coefficient value
+            # Calculate krippendorff coefficient value
             krippendorff_values = cac_coefficient.krippendorff()
             krippendorff_alpha = krippendorff_values['est']['coefficient_value']
             # Add the coefficient value to the list
-            coefficient_values.append(krippendorff_alpha)
+            krippendorff_alpha_values_list.append(krippendorff_alpha)
+
+            # Calculate fleiss coefficient value
+            fleiss_kappa_values = cac_coefficient.fleiss()
+            fleiss_kappa = fleiss_kappa_values['est']['coefficient_value']
+            # Add the coefficient value to the list
+            fleiss_kappa_values_list.append(fleiss_kappa)
+
+            # Calculate gwets coefficient value
+            gwets_values = cac_coefficient.gwet()
+            gwets_ac1 = gwets_values['est']['coefficient_value']
+            # Add the coefficient value to the list
+            gwets_values_list.append(gwets_ac1)
 
         # Calculate the mean Krippendorff's alpha value
-        mean_coefficient_value = np.mean(coefficient_values)
-
-        return mean_coefficient_value
+        krippendorf_mean_coefficient_value = np.mean(krippendorff_alpha_values_list)
+        fleiss_kappa_mean_coefficient_value = np.mean(fleiss_kappa_values_list)
+        gwets_mean_coefficient_value = np.mean(gwets_values_list)
+        print(f"Krippendorff's alpha: {krippendorf_mean_coefficient_value}")
+        print(f"Fleiss kappa: {fleiss_kappa_mean_coefficient_value}")
+        print(f"Gwet's AC1: {gwets_mean_coefficient_value}")
 
     def list_To_String(self, List: list) -> str:
         """
