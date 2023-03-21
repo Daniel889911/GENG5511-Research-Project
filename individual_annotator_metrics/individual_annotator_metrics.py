@@ -130,23 +130,26 @@ class Label_Metrics :
         krippendorff_alpha_table['percent_agreement'] = percentage_series
 
         return krippendorff_alpha_table
-
-    def calculate_agreement(self, df: pd.DataFrame) -> dict:
+  
+    def calculate_individual_annotator_agreement_metrics(self, df: pd.DataFrame) -> dict:
         agreement = {annotator: 0 for annotator in df.columns}
 
         for token in df.index:
             token_labels = df.loc[token].dropna()
-            majority_label = token_labels.value_counts().idxmax()
+            label_counts = token_labels.value_counts()
+            max_count = label_counts.max()
+            majority_labels = label_counts[label_counts == max_count].index.tolist()
 
             for annotator in df.columns:
                 current_label = df.loc[token, annotator]
-                if not pd.isna(current_label) and current_label == majority_label:
+                if not pd.isna(current_label) and current_label in majority_labels:
                     agreement[annotator] += 1
 
         total_tokens = len(df)
         agreement_percentage = {annotator: (agreement[annotator] / total_tokens) * 100 for annotator in agreement}
 
         return agreement_percentage
+
 
     def list_To_String(self, List: list) -> str:
         """

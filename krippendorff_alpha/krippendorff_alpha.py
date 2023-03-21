@@ -110,7 +110,7 @@ class Label_Metrics :
         return annotated_df
 
 
-    def create_krippendorf_alpha_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
+    def create_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
         # Pivot the annotated_df DataFrame to create a table with annotators as rows and tokens as columns
         krippendorff_alpha_table = annotated_df.pivot_table(index='annotator_id', columns='token', values='label', aggfunc='first')
 
@@ -119,7 +119,7 @@ class Label_Metrics :
 
         return krippendorff_alpha_table
 
-    def convert_krippendorf_alpha_table_to_list_of_lists(self, krippendorff_alpha_table: pd.DataFrame) -> list:
+    def convert_annotations_table_to_list_of_lists(self, krippendorff_alpha_table: pd.DataFrame) -> list:
         """
             Convert a DataFrame to a list of lists
 
@@ -154,7 +154,7 @@ class Label_Metrics :
 
         return converted_data_list
 
-    def calculate_krippendorf_alpha_for_all_docs(self) -> float:
+    def calculate_coefficient_for_all_docs(self, coefficient: str ) -> float:
         """
             Calculate Fleiss Kappa for all documents
 
@@ -165,7 +165,7 @@ class Label_Metrics :
         same_docs = self.get_same_doc_ids()
 
         # Initialize a list to store the Krippendorff's alpha values for each document
-        fleiss_kappa_values = []
+        coefficient_values = []
 
         # Loop through all the documents
         for doc_idx in same_docs:
@@ -173,24 +173,24 @@ class Label_Metrics :
             annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
 
             # Create a table with annotators as rows and tokens as columns
-            fleiss_kappa_table = self.create_krippendorf_alpha_table(annotated_df)
+            fleiss_kappa_table = self.create_annotations_table(annotated_df)
 
             # Convert the table to a list of lists
-            data_list = self.convert_krippendorf_alpha_table_to_list_of_lists(fleiss_kappa_table)
+            data_list = self.convert_annotations_table_to_list_of_lists(fleiss_kappa_table)
 
             # Convert labels to integers and replace None with NaN
             converted_data_list = self.convert_labels_to_integers(data_list)
 
-            # Calculate Krippendorff's alpha
-            fleiss_kappa = krippendorff.alpha(converted_data_list, level_of_measurement='nominal')
+            # Calculate coefficient value
+            coefficient_value = krippendorff.alpha(converted_data_list, level_of_measurement='nominal')
 
-            # Add the Krippendorff's alpha value to the list
-            fleiss_kappa_values.append(fleiss_kappa)
+            # Add the coefficient value to the list
+            coefficient_values.append(coefficient_value)
 
         # Calculate the mean Krippendorff's alpha value
-        mean_fleiss_kappa = np.mean(fleiss_kappa_values)
+        mean_coefficient_value = np.mean(coefficient_values)
 
-        return mean_fleiss_kappa
+        return mean_coefficient_value
 
     def list_To_String(self, List: list) -> str:
         """
