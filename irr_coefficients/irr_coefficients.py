@@ -133,6 +133,7 @@ class Label_Metrics :
         krippendorff_alpha_values_list = []
         fleiss_kappa_values_list = []
         gwets_values_list = []
+        congers_values_list = []
         mean_coefficients = {}
         
         # Loop through all the documents
@@ -164,13 +165,21 @@ class Label_Metrics :
             # Add the coefficient value to the list
             gwets_values_list.append(gwets_ac1)
 
+            # Calculate congers coefficient value
+            congers_values = cac_coefficient.conger()
+            congers_kappa = congers_values['est']['coefficient_value']
+            # Add the coefficient value to the list
+            congers_values_list.append(congers_kappa)
+
         # Calculate the mean Krippendorff's alpha value
         krippendorf_mean_coefficient_value = np.mean(krippendorff_alpha_values_list)
         fleiss_kappa_mean_coefficient_value = np.mean(fleiss_kappa_values_list)
         gwets_mean_coefficient_value = np.mean(gwets_values_list)
+        congers_mean_coefficient_value = np.mean(congers_values_list)
         mean_coefficients['krippendorff'] = krippendorf_mean_coefficient_value
         mean_coefficients['fleiss'] = fleiss_kappa_mean_coefficient_value
         mean_coefficients['gwets'] = gwets_mean_coefficient_value
+        mean_coefficients['congers'] = congers_mean_coefficient_value
 
         return mean_coefficients
 
