@@ -142,3 +142,19 @@ def create_heatmap(ngram_metrics):
     df2 = df.sort_values(by="Metric", ascending=True)
     df3 = df2.pivot("Label", "Ngram",values='Metric')
     sns.heatmap(df3,cmap='RdYlGn', annot=True)
+
+def create_bar_chart(data, x_label, y_label, title):
+    # Create a bar chart using Seaborn
+    sns.set(style="whitegrid")
+    ax = sns.barplot(x=list(data.keys()), y=list(data.values()), palette="Blues_d")
+
+    # Add labels to the chart
+    ax.set(xlabel=x_label, ylabel=y_label, title=title)
+    ax.set_ylim([0, 100])  # Set the y-axis limits to start from 0 and go up to 100
+
+    # Add the values on top of the bars
+    for i, v in enumerate(data.values()):
+        ax.text(i, v + 1, str(round(v, 2)), color='black', ha='center')
+
+    # Show the chart
+    plt.show()

@@ -133,6 +133,7 @@ class Label_Metrics :
         krippendorff_alpha_values_list = []
         fleiss_kappa_values_list = []
         gwets_values_list = []
+        mean_coefficients = {}
         
         # Loop through all the documents
         for doc_idx in same_docs:
@@ -167,9 +168,11 @@ class Label_Metrics :
         krippendorf_mean_coefficient_value = np.mean(krippendorff_alpha_values_list)
         fleiss_kappa_mean_coefficient_value = np.mean(fleiss_kappa_values_list)
         gwets_mean_coefficient_value = np.mean(gwets_values_list)
-        print(f"Krippendorff's alpha: {krippendorf_mean_coefficient_value}")
-        print(f"Fleiss kappa: {fleiss_kappa_mean_coefficient_value}")
-        print(f"Gwet's AC1: {gwets_mean_coefficient_value}")
+        mean_coefficients['krippendorff'] = krippendorf_mean_coefficient_value
+        mean_coefficients['fleiss'] = fleiss_kappa_mean_coefficient_value
+        mean_coefficients['gwets'] = gwets_mean_coefficient_value
+
+        return mean_coefficients
 
     def list_To_String(self, List: list) -> str:
         """

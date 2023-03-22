@@ -148,6 +148,8 @@ class Label_Metrics :
         total_tokens = len(df)
         agreement_percentage = {annotator: (agreement[annotator] / total_tokens) * 100 for annotator in agreement}
 
+        del agreement_percentage['percent_agreement']
+
         return agreement_percentage
 
 
