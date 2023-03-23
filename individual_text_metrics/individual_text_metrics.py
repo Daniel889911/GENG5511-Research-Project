@@ -21,34 +21,25 @@ class Label_Metrics :
         self.same_docs = []
         self.annotated_corpus = []
 
-    def get_same_doc_ids(self) : 
+    def get_same_doc_ids(self): 
         """
             Gets all the same annotated document ids for all the annotators
 
             Returns:
                 The same annotated document ids annotated by all the annotators 
-              
+
         """ 
-        # find shortest document
-        shortest_doc_length = float('inf')    
-        shortest_doc_id = 0
-        shortest_annotator = None
-        doc_idxs1 = []
-        doc_idxs2 = []
-        for i, annotator in enumerate(self.annotator_list):
-            doc_length = len(annotator.get_doc_idxs())
-            if doc_length < shortest_doc_length:
-                shortest_doc_length = doc_length
-                shortest_annotator = self.annotator_list[i]
-                shortest_doc_id = i
-        doc_idxs1 = shortest_annotator.get_doc_idxs()
-        self.same_docs = set(doc_idxs1)
-        # compare the shortest document with all the other documents to get same documents
-        for i, annotator in enumerate(self.annotator_list):            
-            if shortest_doc_id != i:
-                doc_idxs2 = annotator.get_doc_idxs()
-                self.same_docs = self.same_docs.intersection(doc_idxs2)
-        return list(self.same_docs)
+        # Initialize a set with the doc_idxs from the first annotator
+        same_docs = set(self.annotator_list[0].get_doc_idxs())
+
+        # Iterate through the remaining annotators, updating the set with the intersection
+        for annotator in self.annotator_list[1:]:
+            same_docs.intersection_update(annotator.get_doc_idxs())
+
+        # Store the same annotated document ids in the class variable
+        self.same_docs = same_docs
+
+        return self.same_docs
     
     def get_token_label(self, tokens:list, mentions: dict) -> list:
         """

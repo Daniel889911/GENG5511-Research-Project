@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
+import matplotlib.gridspec as gridspec
 
 def create_pie_chart(label_list):
     for label_data in label_list:
@@ -138,7 +139,20 @@ def create_pie_chart_individual_ngram(individual_ngram_metrics):
         plt.show()
 
 def create_heatmap(ngram_metrics):
-    df = pd.DataFrame(ngram_metrics, columns =['Label', 'Ngram', 'Metric'])
+    df = pd.DataFrame(ngram_metrics, columns=['Label', 'Ngram', 'Metric'])
     df2 = df.sort_values(by="Metric", ascending=True)
-    df3 = df2.pivot("Label", "Ngram",values='Metric')
-    sns.heatmap(df3,cmap='RdYlGn', annot=True)
+    df3 = df2.pivot("Label", "Ngram", values='Metric')
+
+    # Set up the figure and gridspec with an increased figure height
+    fig = plt.figure(figsize=(10, 30))  # Adjust the 20 to a suitable height
+    gs = gridspec.GridSpec(nrows=len(df3), ncols=1, height_ratios=[1] * len(df3))
+
+    # Create the heatmap with increased vertical spacing
+    ax = plt.subplot(gs[:])
+    sns.heatmap(df3, cmap='RdYlGn', annot=True, ax=ax)
+
+    # Adjust the y-axis label size
+    ax.yaxis.set_tick_params(labelsize=8)
+
+    # Show the heatmap
+    plt.show()

@@ -21,34 +21,26 @@ class Label_Metrics :
         self.same_docs = []
         self.annotated_corpus = []
 
-    def get_same_doc_ids(self) : 
+    def get_same_doc_ids(self): 
         """
             Gets all the same annotated document ids for all the annotators
 
             Returns:
                 The same annotated document ids annotated by all the annotators 
-              
+
         """ 
-        # find shortest document
-        shortest_doc_length = float('inf')    
-        shortest_doc_id = 0
-        shortest_annotator = None
-        doc_idxs1 = []
-        doc_idxs2 = []
-        for i, annotator in enumerate(self.annotator_list):
-            doc_length = len(annotator.get_doc_idxs())
-            if doc_length < shortest_doc_length:
-                shortest_doc_length = doc_length
-                shortest_annotator = self.annotator_list[i]
-                shortest_doc_id = i
-        doc_idxs1 = shortest_annotator.get_doc_idxs()
-        self.same_docs = set(doc_idxs1)
-        # compare the shortest document with all the other documents to get same documents
-        for i, annotator in enumerate(self.annotator_list):            
-            if shortest_doc_id != i:
-                doc_idxs2 = annotator.get_doc_idxs()
-                self.same_docs = self.same_docs.intersection(doc_idxs2)
-        return list(self.same_docs)
+        # Initialize a set with the doc_idxs from the first annotator
+        same_docs = set(self.annotator_list[0].get_doc_idxs())
+
+        # Iterate through the remaining annotators, updating the set with the intersection
+        for annotator in self.annotator_list[1:]:
+            same_docs.intersection_update(annotator.get_doc_idxs())
+
+        # Store the same annotated document ids in the class variable
+        self.same_docs = same_docs
+
+        return self.same_docs
+
     
     def get_token_label(self, tokens:list, mentions: dict) -> list:
         """
@@ -118,6 +110,7 @@ class Label_Metrics :
         krippendorff_alpha_table = krippendorff_alpha_table.astype(object).where(pd.notnull(krippendorff_alpha_table), None)
 
         return krippendorff_alpha_table
+        
 
     def calculate_coefficient_for_all_docs(self) -> float:
         """
@@ -129,14 +122,11 @@ class Label_Metrics :
         # Get the same document ids annotated by all the annotators
         same_docs = self.get_same_doc_ids()
 
-        # Initialize a list to store the Krippendorff's alpha values for each document
-        krippendorff_alpha_values_list = []
-        fleiss_kappa_values_list = []
-        gwets_values_list = []
-        congers_values_list = []
-        mean_coefficients = {}
-        
-        # Loop through all the documents
+        coefficients_dict = {}
+      
+        # Initialize an empty dataframe to accumulate all subdocuments' annotations
+        accumulated_coefficients_table = pd.DataFrame()
+
         for doc_idx in same_docs:
             # Get the tokens and labels for a doc_idx for all the annotators
             annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
@@ -144,44 +134,34 @@ class Label_Metrics :
             # Create a table with annotators as rows and tokens as columns
             coefficients_table = self.create_annotations_table(annotated_df)
 
-            # Initialise CAC
-            cac_coefficient = CAC(coefficients_table)
+            # Accumulate the annotations in the accumulated_coefficients_table
+            accumulated_coefficients_table = pd.concat([accumulated_coefficients_table, coefficients_table], axis=1)
 
-            # Calculate krippendorff coefficient value
-            krippendorff_values = cac_coefficient.krippendorff()
-            krippendorff_alpha = krippendorff_values['est']['coefficient_value']
-            # Add the coefficient value to the list
-            krippendorff_alpha_values_list.append(krippendorff_alpha)
+        # Initialise CAC with the accumulated_coefficients_table
+        cac_coefficient = CAC(accumulated_coefficients_table)
 
-            # Calculate fleiss coefficient value
-            fleiss_kappa_values = cac_coefficient.fleiss()
-            fleiss_kappa = fleiss_kappa_values['est']['coefficient_value']
-            # Add the coefficient value to the list
-            fleiss_kappa_values_list.append(fleiss_kappa)
+        # Calculate krippendorff coefficient value for the accumulated table
+        krippendorff_values = cac_coefficient.krippendorff()
+        krippendorff_alpha = krippendorff_values['est']['coefficient_value']
 
-            # Calculate gwets coefficient value
-            gwets_values = cac_coefficient.gwet()
-            gwets_ac1 = gwets_values['est']['coefficient_value']
-            # Add the coefficient value to the list
-            gwets_values_list.append(gwets_ac1)
+        # Calculate fleiss kappa coefficient value for the accumulated table
+        fleiss_values = cac_coefficient.fleiss()
+        fleiss_alpha =  fleiss_values['est']['coefficient_value']
 
-            # Calculate congers coefficient value
-            congers_values = cac_coefficient.conger()
-            congers_kappa = congers_values['est']['coefficient_value']
-            # Add the coefficient value to the list
-            congers_values_list.append(congers_kappa)
+        # Calculate Gwets AC1 value for the accumulated table
+        gwet_values = cac_coefficient.gwet()
+        gwet_alpha =  gwet_values['est']['coefficient_value']
 
-        # Calculate the mean Krippendorff's alpha value
-        krippendorf_mean_coefficient_value = np.mean(krippendorff_alpha_values_list)
-        fleiss_kappa_mean_coefficient_value = np.mean(fleiss_kappa_values_list)
-        gwets_mean_coefficient_value = np.mean(gwets_values_list)
-        congers_mean_coefficient_value = np.mean(congers_values_list)
-        mean_coefficients['krippendorff'] = krippendorf_mean_coefficient_value
-        mean_coefficients['fleiss'] = fleiss_kappa_mean_coefficient_value
-        mean_coefficients['gwets'] = gwets_mean_coefficient_value
-        mean_coefficients['congers'] = congers_mean_coefficient_value
+        # Calculate Conger kappa value for the accumulated table
+        conger_values = cac_coefficient.conger()
+        conger_alpha =  conger_values['est']['coefficient_value']
 
-        return mean_coefficients
+        coefficients_dict['krippendorff'] = krippendorff_alpha
+        coefficients_dict['fleiss'] = fleiss_alpha
+        coefficients_dict['gwets'] = gwet_alpha
+        coefficients_dict['conger'] = conger_alpha
+
+        return coefficients_dict
 
     def list_To_String(self, List: list) -> str:
         """
@@ -197,6 +177,9 @@ class Label_Metrics :
         """    
         str1 = " "    
         return (str1.join(List))
+    
+
+
 
 
                 
