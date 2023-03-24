@@ -70,7 +70,7 @@ class Label_Metrics :
 
     def get_all_annotators_tokens_labels_all_docs(self) -> pd.DataFrame:
         """
-            Gets the tokens and labels for a doc_idx for all the annotators
+            Gets the tokens and labels for all doc_idx and all the annotators
 
             Parameters:
                 doc_idx :

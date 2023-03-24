@@ -103,27 +103,25 @@ class Label_Metrics :
 
 
     def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with annotators as rows and tokens as columns
-        krippendorff_alpha_table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
+        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators as columns
+        table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
 
         # Ensure the table contains dtype 'object' and missing values are replaced with None
-        krippendorff_alpha_table = krippendorff_alpha_table.astype(object).where(pd.notnull(krippendorff_alpha_table), None)
+        table = table.astype(object).where(pd.notnull(table), None)
 
-        return krippendorff_alpha_table
+        return table
         
 
-    def calculate_coefficient_for_all_docs(self) -> float:
+    def create_all_annotations_table(self) -> float:
         """
-            Calculate Coefficients for all documents
+            Create a table with tokens as rows and annotators as columns for the whole corpus
 
             Returns:
-                The Coefficient value for all documents
+                The dataframe with tokens as rows and annotators as columns for the whole corpus
         """
         # Get the same document ids annotated by all the annotators
         same_docs = self.get_same_doc_ids()
-
-        coefficients_dict = {}
-      
+     
         # Initialize an empty dataframe to accumulate all subdocuments' annotations
         accumulated_table = pd.DataFrame()
 
@@ -137,31 +135,13 @@ class Label_Metrics :
             # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
 
-        # Initialise CAC with the accumulated_coefficients_table
-        cac_coefficient = CAC(accumulated_table)
-
-        # Calculate krippendorff coefficient value for the accumulated table
-        krippendorff_values = cac_coefficient.krippendorff()
-        krippendorff_alpha = krippendorff_values['est']['coefficient_value']
-
-        # Calculate fleiss kappa coefficient value for the accumulated table
-        fleiss_values = cac_coefficient.fleiss()
-        fleiss_alpha =  fleiss_values['est']['coefficient_value']
-
-        # Calculate Gwets AC1 value for the accumulated table
-        gwet_values = cac_coefficient.gwet()
-        gwet_alpha =  gwet_values['est']['coefficient_value']
-
-        # Calculate Conger kappa value for the accumulated table
-        conger_values = cac_coefficient.conger()
-        conger_alpha =  conger_values['est']['coefficient_value']
-
-        coefficients_dict['krippendorff'] = krippendorff_alpha
-        coefficients_dict['fleiss'] = fleiss_alpha
-        coefficients_dict['gwets'] = gwet_alpha
-        coefficients_dict['conger'] = conger_alpha
-
-        return coefficients_dict, accumulated_table
+        return accumulated_table
+    
+    def count_labels_proportion(self, df: pd.DataFrame) -> dict:
+        label_counts = df.stack().value_counts()
+        total_labels = label_counts.sum()
+        label_proportions = (label_counts / total_labels) * 100
+        return label_proportions.to_dict()
 
     def list_To_String(self, List: list) -> str:
         """
