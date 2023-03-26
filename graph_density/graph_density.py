@@ -142,96 +142,31 @@ class Label_Metrics :
         return accumulated_table
 
     @classmethod
-    def create_annotator_graph(cls,data: pd.DataFrame, annotator: str) -> nx.Graph:
+    def create_agreement_graph(cls, df: pd.DataFrame) -> nx.Graph:
         G = nx.Graph()
-        annotator_data = data[data['annotator_id'] == annotator]
-        for index, row in annotator_data.iterrows():
-            item = row['token']
-            annotation = row['label']
-            G.add_edge(item, annotation)
+        for _, row in df.iterrows():
+            annotator, token, label = row['annotator_id'], row['token'], row['label']
+            G.add_node(annotator, type='annotator')
+            G.add_node((token, label), type='annotation')
+            G.add_edge(annotator, (token, label))
         return G
 
     @classmethod
-    def create_annotator_graphs(cls, data: pd.DataFrame, annotator_nodes: set) -> dict:
-        return {annotator: cls.create_annotator_graph(data, annotator) for annotator in annotator_nodes}
+    def custom_graph_density(cls, G):
+        # Count the total number of edges for nodes with more than one edge
+        edge_count = sum([degree for _, degree in G.degree() if degree > 1])
+        
+        # Get the total number of edges in the graph
+        total_edges = G.number_of_edges()
 
-    @classmethod
-    def calculate_pairwise_ged(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_ged = {}
-        for annotator1, annotator2 in itertools.combinations(annotator_nodes, 2):
-            pair_key = (annotator1, annotator2)
-            if pair_key in pairwise_ged:
-                continue
-            ged_value = nx.graph_edit_distance(annotator_graphs[annotator1], annotator_graphs[annotator2], timeout = 10)
-            pairwise_ged[pair_key] = ged_value
-        return pairwise_ged
+        # Calculate the percentage of edges for nodes with more than one edge
+        if total_edges == 0:
+            return 0
+        else:
+            return edge_count / (2 * total_edges)
 
-    @classmethod
-    def calculate_pairwise_mcs(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_mcs = {}
-        for annotator1, annotator2 in itertools.combinations(annotator_nodes, 2):
-            pair_key = (annotator1, annotator2)
-            if pair_key in pairwise_mcs:
-                continue
 
-            GM = isomorphism.GraphMatcher(annotator_graphs[annotator1], annotator_graphs[annotator2])
-            mcs_size = max([len(GM.subgraph_is_isomorphic()) for GM in GM.subgraph_isomorphisms_iter()])
 
-            pairwise_mcs[pair_key] = mcs_size
-        return pairwise_mcs
-
-    @classmethod
-    def calculate_pairwise_jaccard_similarity(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_jaccard_similarity = {}
-        for annotator1, annotator2 in itertools.combinations(annotator_nodes, 2):
-            pair_key = (annotator1, annotator2)
-            if pair_key in pairwise_jaccard_similarity:
-                continue
-            nodes_annotator1 = set(annotator_graphs[annotator1].nodes())
-            nodes_annotator2 = set(annotator_graphs[annotator2].nodes())
-            intersection = nodes_annotator1.intersection(nodes_annotator2)
-            union = nodes_annotator1.union(nodes_annotator2)
-            jaccard_similarity = len(intersection) / len(union)
-            pairwise_jaccard_similarity[pair_key] = jaccard_similarity
-        return pairwise_jaccard_similarity
-
-    @classmethod
-    def calculate_pairwise_shortest_path_kernel(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_shortest_path_kernel = {}
-        kernel = ShortestPath(normalize=True)
-
-        # Convert NetworkX graphs to GraKeL graphs
-        grakel_graphs = {annotator: grakel.graph_from_networkx(annotator_graphs[annotator], node_labels_type=str, edge_labels_type=str) for annotator in annotator_nodes}
-
-        # Compute the shortest path kernel
-        kernel_matrix = kernel.fit_transform(list(grakel_graphs.values()))
-
-        # Store the pairwise kernel values in a dictionary
-        for i, annotator1 in enumerate(annotator_nodes):
-            for j, annotator2 in enumerate(annotator_nodes):
-                if i < j:
-                    pair_key = (annotator1, annotator2)
-                    pairwise_shortest_path_kernel[pair_key] = kernel_matrix[i, j]
-
-        return pairwise_shortest_path_kernel
-    
-    @staticmethod
-    def calculate_pairwise_reliability(pairwise_ged: dict, annotator_graphs: dict) -> dict:
-        pairwise_reliability = {}
-        for pair, ged in pairwise_ged.items():
-            annotator1, annotator2 = pair
-            graph1 = annotator_graphs[annotator1]
-            graph2 = annotator_graphs[annotator2]
-
-            total_nodes = len(graph1.nodes) + len(graph2.nodes)
-            reliability = 1 - (ged / total_nodes)
-            pairwise_reliability[pair] = reliability
-        return pairwise_reliability
-
-    @staticmethod
-    def calculate_overall_reliability(pairwise_reliability: dict) -> dict:
-        overall_reliability = sum(pairwise_reliability.values()) / len(pairwise_reliability)
-        return {'Overall Reliability' : overall_reliability}
     
 
 
