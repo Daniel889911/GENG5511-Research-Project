@@ -15,7 +15,10 @@ class Annotator:
                     Location of annotator's annotated file                
         """
         self.name = name
-        self.person_annotations_filepath = os.path.join('data', person_annotations_file)
+        # Get the absolute path of the parent directory of the current script
+        parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+        # Set the path to the person annotations file, located one level up of the current script
+        self.person_annotations_filepath = os.path.join(parent_dir, 'data', person_annotations_file)
         with open(self.person_annotations_filepath) as json_file:
             self.annotations = [json.loads(line) for line in open(self.person_annotations_filepath,'r')]
         self.doc_idxs = []
