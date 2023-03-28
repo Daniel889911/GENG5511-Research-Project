@@ -58,7 +58,6 @@ class Label_Metrics :
         self.same_docs = same_docs
 
         return self.same_docs
-
     
     def get_token_label(self, tokens:list, mentions: dict) -> list:
         """

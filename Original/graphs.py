@@ -138,7 +138,7 @@ def create_pie_chart_individual_ngram(individual_ngram_metrics):
         # show plot
         plt.show()
 
-def create_heatmap(ngram_metrics):
+def create_heatmap2(ngram_metrics):
     df = pd.DataFrame(ngram_metrics, columns=['Label', 'Ngram', 'Metric'])
     df2 = df.sort_values(by="Metric", ascending=True)
     df3 = df2.pivot("Label", "Ngram", values='Metric')
@@ -156,3 +156,9 @@ def create_heatmap(ngram_metrics):
 
     # Show the heatmap
     plt.show()
+
+def create_heatmap(ngram_metrics):
+    df = pd.DataFrame(ngram_metrics, columns =['Label', 'Ngram', 'Metric'])
+    df2 = df.sort_values(by="Metric", ascending=True)
+    df3 = df2.pivot("Label", "Ngram",values='Metric')
+    sns.heatmap(df3,cmap='RdYlGn', annot=True)

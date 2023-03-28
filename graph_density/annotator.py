@@ -78,7 +78,7 @@ class Annotator:
             ids = self.annotations[idx]["doc_idx"]
             if ids == doc_idx:
                 return self.annotations[idx]["mentions"]
-
+            
     def get_doc_tokens(self, doc_idx: int) -> list :
         """
             Gets the document id with all annotated tokens from annotator
