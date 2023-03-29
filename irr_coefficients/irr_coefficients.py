@@ -20,7 +20,7 @@ class Label_Metrics :
         self.annotator_numbered_list = []
         self.same_docs = []
         self.annotated_corpus = []
-        self.labels = ['Item', 'Activity', None, 'Location', 'Time', 'Attribute', 'Cardinality', 'Agent', 'Consumable', 'Observation/Observed_state', 'Observation/Quantitative', 'Observation/Qualitative', 'Specifier', 'Event', 'Unsure', 'Typo', 'Abbreviation']
+        self.labels = ['Item', 'Activity', 'Location', 'Time', 'Attribute', 'Cardinality', 'Agent', 'Consumable', 'Observation/Observed_state', 'Observation/Quantitative', 'Observation/Qualitative', 'Specifier', 'Event', 'Unsure', 'Typo', 'Abbreviation']
 
     def get_same_doc_ids(self): 
         """
@@ -103,7 +103,7 @@ class Label_Metrics :
         return annotated_df
 
     def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with annotators as rows and tokens as columns
+        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
         table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
 
         # Ensure the table contains dtype 'object' and missing values are replaced with None
@@ -132,7 +132,7 @@ class Label_Metrics :
             # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
-    
+ 
     def create_rows_same_labels(self, start_row: int, end_row: int, df: pd.DataFrame) -> pd.DataFrame:
         """
             Creates a new DataFrame with the same label for all the annotators
@@ -153,7 +153,7 @@ class Label_Metrics :
             if not mode.empty:
                 most_common_label = mode[0]
             else:
-                most_common_label = row.iloc[0]
+                most_common_label = self.labels[0]
             for col_idx in range(df.shape[1]):
                 new_df.iloc[row_idx, col_idx] = most_common_label
         return new_df
@@ -193,7 +193,7 @@ class Label_Metrics :
     
     def calculate_same_different_row_numbers(self, percentage: float, df: pd.DataFrame) -> tuple:
         total_rows = len(df)
-        same_rows = int(total_rows * percentage) + 1
+        same_rows = int(total_rows * percentage)
         different_rows = total_rows - same_rows
         return (same_rows, different_rows, total_rows) 
  
