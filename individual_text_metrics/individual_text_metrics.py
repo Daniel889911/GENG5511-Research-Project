@@ -106,21 +106,21 @@ class Label_Metrics :
 
     def create_individual_text_metrics_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
         # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators as columns
-        krippendorff_alpha_table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
+        table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
 
         # Replace missing values with np.nan
-        krippendorff_alpha_table = krippendorff_alpha_table.replace(to_replace=[None], value=np.nan)
+        table = table.replace(to_replace=[None], value=np.nan)
 
         # Calculate the mode of each row in the DataFrame
-        mode_series = krippendorff_alpha_table.apply(lambda x: x.value_counts().idxmax() if x.value_counts().max() > 1 else 0, axis=1)
+        mode_series = table.apply(lambda x: x.value_counts().idxmax() if x.value_counts().max() > 1 else 0, axis=1)
 
         # Calculate the percentage agreement for each row (token) in the DataFrame
-        boolean_df = krippendorff_alpha_table.values == mode_series.values[:, np.newaxis]
+        boolean_df = table.values == mode_series.values[:, np.newaxis]
         percentage_series = boolean_df.mean(axis=1) * 100   
 
-        krippendorff_alpha_table['percent_agreement'] = percentage_series
+        table['percent_agreement'] = percentage_series
 
-        return krippendorff_alpha_table
+        return table
 
     def calculate_individual_text_metrics_all_docs(self, df: pd.DataFrame) -> float:
         # Reset the index to make 'token' a column
