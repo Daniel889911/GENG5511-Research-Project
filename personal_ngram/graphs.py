@@ -3,12 +3,12 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-def create_pie_chart_individual_ngram(annotator_ngrams_list):
+def create_pie_chart_individual_ngrams(annotator_ngrams_list):
     for annotator, ngrams in annotator_ngrams_list.items():
         for ngram in ngrams:
             # Creating dataset
-            label = ['FULL NGRAM AGREEMENT','PARTIAL NGRAM AGREEMENT']
-            data = [ngram[0], ngram[1]-ngram[0]]
+            label = ['FULL NGRAM AGREEMENT','NO NGRAM AGREEMENT']
+            data = [ngram[1], ngram[2]]
             
             # Creating explode data
             explode = (0.1, 0.0)
@@ -38,7 +38,7 @@ def create_pie_chart_individual_ngram(annotator_ngrams_list):
             
             # Adding legend
             ax.legend(wedges, label,
-                    title="Ngram: {}".format(ngram[0]),
+                    title="Annotator: {}".format(ngram[0]),
                     loc="center left",
                     bbox_to_anchor=(1, 0, 0.5, 1))
             

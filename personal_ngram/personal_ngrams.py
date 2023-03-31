@@ -124,7 +124,7 @@ class Label_Metrics :
                         annotator_ngrams[col].append(1)
             # Create an individual list from annotator_ngrams and add the total ngrams to the list
             for annotator, ngram_list in annotator_ngrams.items():
-                annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams]
+                annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams - sum(ngram_list)]
             # Add the annotator_ngrams to the annotator_ngrams_list
             for annotator, ngram_list in annotator_ngrams.items():
                 annotator_ngrams_list[annotator].append(ngram_list)
