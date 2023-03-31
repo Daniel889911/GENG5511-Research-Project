@@ -100,7 +100,7 @@ class Label_Metrics :
 
         return annotated_df
     
-    def get_ngrams_agreements_lists(self, df) -> dict:
+    def get_ngrams_agreements_lists(self, df):
         # Create a dictionary to store the ngrams dataframes
         ngrams_dfs = {}        
         partial_ngram_agreements = {}
@@ -108,11 +108,11 @@ class Label_Metrics :
         # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
+            # drop the ngram column
+            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
-            # use method create_single_annotations_table to create a table with tokens as rows and annotators as columns
-            ngrams_dfs[ngram] = self.create_single_annotations_table(ngram_df)
-            ngrams_dfs[ngram] = ngrams_dfs[ngram].fillna('None')
+            # ngrams_dfs[ngram] = ngrams_dfs[ngram].fillna('None')
             # iterate through each row of the new table
             for row in ngrams_dfs[ngram].index:
                 # find the majority label count of each row
@@ -127,13 +127,18 @@ class Label_Metrics :
         all_ngram_agreements = [[key, full_ngram_agreements.get(key, 0), partial_ngram_agreements.get(key, 0)] for key in all_keys]      
         return all_ngram_agreements        
 
-    def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
-        table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
+    def create_single_annotations_table(self, annotated_df):
+        # Create the pivot table with 'token' as index and 'annotator_id' as columns
+        pivot_df = annotated_df.pivot_table(index=['token', 'ngram'], columns='annotator_id', values='label', aggfunc='first')
 
-        # Ensure the table contains dtype 'object' and missing values are replaced with None
-        table = table.astype(object).where(pd.notnull(table), None)
-        return table
+        # Reset the index to make 'token' and 'ngram' regular columns
+        pivot_df.reset_index(inplace=True)
+
+        # Set the 'token' column as the index again
+        result_df = pivot_df.set_index('token')
+        result_df = result_df.fillna('None')
+
+        return result_df
 
     def get_accumulated_table(self) -> pd.DataFrame:
         """
@@ -157,7 +162,6 @@ class Label_Metrics :
             # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
-
 
 
     def list_To_String(self, List: list) -> str:
