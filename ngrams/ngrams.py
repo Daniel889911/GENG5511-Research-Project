@@ -124,7 +124,7 @@ class Label_Metrics :
                     partial_ngram_agreements[ngram] = partial_ngram_agreements.get(ngram, 0) + 1
 
         all_keys = set(full_ngram_agreements.keys()) | set(partial_ngram_agreements.keys())
-        all_ngram_agreements = [[key, full_ngram_agreements.get(key, 0), partial_ngram_agreements.get(key, 0)] for key in all_keys]      
+        all_ngram_agreements = [[f'{key}-ngram', full_ngram_agreements.get(key, 0), partial_ngram_agreements.get(key, 0)] for key in all_keys]      
         return all_ngram_agreements        
 
     def create_single_annotations_table(self, annotated_df):
