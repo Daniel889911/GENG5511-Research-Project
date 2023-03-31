@@ -30,14 +30,10 @@ class Label_Metrics :
                 The same annotated document ids annotated by all the annotators 
 
         """ 
-        # Initialize a set with the doc_idxs from the first annotator
-        same_docs = set(self.annotator_list[0].get_doc_idxs())
+         same_docs = set(self.annotator_list[0].get_doc_idxs())
 
-        # Iterate through the remaining annotators, updating the set with the intersection
         for annotator in self.annotator_list[1:]:
             same_docs.intersection_update(annotator.get_doc_idxs())
-
-        # Store the same annotated document ids in the class variable
         self.same_docs = same_docs
         return self.same_docs
     
@@ -80,64 +76,40 @@ class Label_Metrics :
                 The tokens with labels as a DataFrame for all the annotators
 
         """
-        # Initialize an empty DataFrame with the desired columns
         annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label', 'ngram'])
-
-        # Loop through all the annotators
         for annotator in self.annotator_list:
-            # Get the annotator_id from the annotator object (assuming it has an 'id' attribute)
             annotator_id = annotator.name
             mention = annotator.get_doc_mentions(doc_idx)
             token = annotator.get_doc_tokens(doc_idx)
             annotated = self.get_token_label(token, mention)
-
-            # Create a temporary DataFrame to store the current annotator's data
             temp_df = pd.DataFrame(annotated, columns=['token', 'label', 'ngram'])
             temp_df['annotator_id'] = annotator_id
-
-            # Append the temporary DataFrame to the main DataFrame using pandas.concat
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
-
         return annotated_df
     
     def get_annotator_ngrams_agreements_lists(self, df):
-        # Create a dictionary to store the ngrams dataframes
         ngrams_dfs = {}    
         annotator_ngrams_list = {col: [] for col in df.columns if col != 'ngram'}
-        # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
-            # drop the ngram column
             ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)            
-        # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
-            total_ngrams = len(ngram_df.index)            
-            # Initialize an empty dictionary for annotator_ngrams            
+            total_ngrams = len(ngram_df.index)                
             annotator_ngrams = {col: [] for col in ngram_df.columns}
-            # iterate through each row of the new table
             for row_idx in range(len(ngram_df)): 
-                # Loop through all the annotator columns, starting from the second column index (1)
                 for col_idx in range(len(ngram_df.columns)):
                     col = ngram_df.columns[col_idx]
-                    # If the label is not 'None' then add integer 1 to the annotator_ngrams
                     if ngram_df.iloc[row_idx, col_idx] != 'None':
                         annotator_ngrams[col].append(1)
-            # Create an individual list from annotator_ngrams and add the total ngrams to the list
             for annotator, ngram_list in annotator_ngrams.items():
                 annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams - sum(ngram_list)]
-            # Add the annotator_ngrams to the annotator_ngrams_list
             for annotator, ngram_list in annotator_ngrams.items():
                 annotator_ngrams_list[annotator].append(ngram_list)
         return annotator_ngrams_list
 
     def create_single_annotations_table(self, annotated_df):
-        # Create the pivot table with 'token' as index and 'annotator_id' as columns
         pivot_df = annotated_df.pivot_table(index=['token', 'ngram'], columns='annotator_id', values='label', aggfunc='first')
-
-        # Reset the index to make 'token' and 'ngram' regular columns
         pivot_df.reset_index(inplace=True)
-
-        # Set the 'token' column as the index again
         result_df = pivot_df.set_index('token')
         result_df.fillna('None', inplace=True)
         return result_df
@@ -149,19 +121,11 @@ class Label_Metrics :
             Returns:
                 The accumulated table for all the documents
         """
-        # Get the same document ids annotated by all the annotators
         same_docs = self.get_same_doc_ids()
-
-        # Initialize an empty dataframe to accumulate all subdocuments' annotations
         accumulated_table = pd.DataFrame()
         for doc_idx in same_docs:
-            # Get the tokens and labels for a doc_idx for all the annotators
             annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
-
-            # Create a table with tokens as rows and annotators as columns
             table = self.create_single_annotations_table(annotated_df)
-
-            # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
 

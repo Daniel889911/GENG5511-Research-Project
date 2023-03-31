@@ -6,7 +6,7 @@ import seaborn as sns
 def create_pie_chart_ngram(ngram_list):
     for ngram_data in ngram_list:
         # Creating dataset
-        label = ['FULL NGRAM AGREEMENT','PARTIAL NGRAM AGREEMENT']
+        label = ['FULL NGRAM AGREEMENT','NO NGRAM AGREEMENT']
         
         data = [ngram_data[1], ngram_data[2]]    
         
