@@ -102,35 +102,33 @@ class Label_Metrics :
     
     def get_annotator_ngrams_agreements_lists(self, df):
         # Create a dictionary to store the ngrams dataframes
-        ngrams_dfs = {}        
-        annotator_list = []
-
+        ngrams_dfs = {}    
+        annotator_ngrams_list = {col: [] for col in df.columns if col != 'ngram'}
         # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
             # drop the ngram column
-            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
-
+            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)            
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
-            # Initialize an empty dictionary for annotator_ngrams
+            total_ngrams = len(ngram_df.index)            
+            # Initialize an empty dictionary for annotator_ngrams            
             annotator_ngrams = {col: [] for col in ngram_df.columns}
-
             # iterate through each row of the new table
-            for row in ngram_df.index:
-                # loop through all the annotator columns
-                for col in ngram_df.columns:
-                    # if the label is not NaN then add integer 1 to the annotator_ngrams
-                    if not (pd.isna(ngram_df.loc[row, col])):
+            for row_idx in range(len(ngram_df)): 
+                # Loop through all the annotator columns, starting from the second column index (1)
+                for col_idx in range(len(ngram_df.columns)):
+                    col = ngram_df.columns[col_idx]
+                    # If the label is not 'None' then add integer 1 to the annotator_ngrams
+                    if ngram_df.iloc[row_idx, col_idx] != 'None':
                         annotator_ngrams[col].append(1)
-
             # Create an individual list from annotator_ngrams and add the total ngrams to the list
-            total_ngrams = len(ngram_df.index)
             for annotator, ngram_list in annotator_ngrams.items():
-                annotator_ngrams[annotator] = [sum(ngram_list), total_ngrams]
-                annotator_list.append(annotator_ngrams)
-
-        return annotator_list 
+                annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams]
+            # Add the annotator_ngrams to the annotator_ngrams_list
+            for annotator, ngram_list in annotator_ngrams.items():
+                annotator_ngrams_list[annotator].append(ngram_list)
+        return annotator_ngrams_list
 
     def create_single_annotations_table(self, annotated_df):
         # Create the pivot table with 'token' as index and 'annotator_id' as columns
@@ -141,6 +139,7 @@ class Label_Metrics :
 
         # Set the 'token' column as the index again
         result_df = pivot_df.set_index('token')
+        result_df.fillna('None', inplace=True)
         return result_df
 
     def get_accumulated_table(self) -> pd.DataFrame:
