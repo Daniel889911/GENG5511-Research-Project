@@ -64,7 +64,7 @@ class Label_Metrics :
             token = self.list_To_String(token)
             label = ment["labels"]
             label = self.list_To_String(label)
-            annotations_list1 = [token, label, start, end]    
+            annotations_list1 = [token, label, end-start]    
             annotations_list2.append(annotations_list1)    
         return annotations_list2
 
@@ -81,7 +81,7 @@ class Label_Metrics :
 
         """
         # Initialize an empty DataFrame with the desired columns
-        annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label', 'start', 'end'])
+        annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label', 'ngram'])
 
         # Loop through all the annotators
         for annotator in self.annotator_list:
@@ -92,13 +92,40 @@ class Label_Metrics :
             annotated = self.get_token_label(token, mention)
 
             # Create a temporary DataFrame to store the current annotator's data
-            temp_df = pd.DataFrame(annotated, columns=['token', 'label', 'start', 'end'])
+            temp_df = pd.DataFrame(annotated, columns=['token', 'label', 'ngram'])
             temp_df['annotator_id'] = annotator_id
 
             # Append the temporary DataFrame to the main DataFrame using pandas.concat
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
 
         return annotated_df
+    
+    def get_ngrams_agreements_lists(self, df) -> dict:
+        # Create a dictionary to store the ngrams dataframes
+        ngrams_dfs = {}        
+        partial_ngram_agreements = {}
+        full_ngram_agreements = {}
+        # Loop through the dataframe df and create a dataframe for each ngram
+        for ngram in df['ngram'].unique():
+            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
+        # Loop through all the dataframes in ngrams 
+        for ngram, ngram_df in ngrams_dfs.items():
+            # use method create_single_annotations_table to create a table with tokens as rows and annotators as columns
+            ngrams_dfs[ngram] = self.create_single_annotations_table(ngram_df)
+            ngrams_dfs[ngram] = ngrams_dfs[ngram].fillna('None')
+            # iterate through each row of the new table
+            for row in ngrams_dfs[ngram].index:
+                # find the majority label count of each row
+                majority_label_count = ngrams_dfs[ngram].loc[row].value_counts().max()
+                full_agreement = (majority_label_count == self.annotator_count)
+                if full_agreement:
+                    full_ngram_agreements[ngram] = full_ngram_agreements.get(ngram, 0) + 1
+                else:
+                    partial_ngram_agreements[ngram] = partial_ngram_agreements.get(ngram, 0) + 1
+
+        all_keys = set(full_ngram_agreements.keys()) | set(partial_ngram_agreements.keys())
+        all_ngram_agreements = [[key, full_ngram_agreements.get(key, 0), partial_ngram_agreements.get(key, 0)] for key in all_keys]      
+        return all_ngram_agreements        
 
     def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
         # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
@@ -131,39 +158,7 @@ class Label_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
 
-    def get_label_agreements_lists(self, df):
-        df = df.fillna('None')
-        # Count the occurrences of each label for each token
-        label_counts = df.apply(lambda x: x.value_counts(), axis=1)
 
-        # Calculate the total number of annotators
-        total_annotators = len(df.columns)
-
-        # Initialize dictionaries to store the counts of partial and full agreements for each label
-        partial_label_agreements = {}
-        full_label_agreements = {}
-
-        # Iterate through each token and its label counts
-        for _, counts in label_counts.iterrows():
-            # Check if there is a full agreement for any label
-            full_agreement = any(count == total_annotators for count in counts)
-
-            # If there is no full agreement, then it's a partial agreement
-            if not full_agreement:
-                for label, count in counts.items():
-                    # get the highest count and label in counts.items()
-                    if count == counts.max():
-                        if not pd.isna(label) :
-                            partial_label_agreements[label] = partial_label_agreements.get(label, 0) + 1
-            else:
-                # If there is a full agreement, increment the count for the fully agreed label
-                majority_label = counts.idxmax()
-                full_label_agreements[majority_label] = full_label_agreements.get(majority_label, 0) + 1
-
-        all_keys = set(full_label_agreements.keys()) | set(partial_label_agreements.keys())
-        all_label_agreements = [[key, full_label_agreements.get(key, 0), partial_label_agreements.get(key, 0)] for key in all_keys]
-
-        return all_label_agreements
 
     def list_To_String(self, List: list) -> str:
         """
