@@ -99,12 +99,14 @@ class Label_Metrics :
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
 
         return annotated_df
-    
-    def get_ngrams_agreements_lists(self, df):
+
+    def get_all_ngrams_agreements_lists(self, df):
         # Create a dictionary to store the ngrams dataframes
-        ngrams_dfs = {}        
-        partial_ngram_agreements = {}
-        full_ngram_agreements = {}
+        ngrams_dfs = {}    
+        # Create a dictionary to store the ngrams agreements lists
+        # The keys will be the ngrams and the values will be the lists of partial and full agreements
+        # The lists will be in the form [full_agreements, partial_agreements]
+        ngram_agreements = {}   
         # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
@@ -112,20 +114,24 @@ class Label_Metrics :
             ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
-            # ngrams_dfs[ngram] = ngrams_dfs[ngram].fillna('None')
-            # iterate through each row of the new table
-            for row in ngrams_dfs[ngram].index:
-                # find the majority label count of each row
-                majority_label_count = ngrams_dfs[ngram].loc[row].value_counts().max()
-                full_agreement = (majority_label_count == self.annotator_count)
-                if full_agreement:
-                    full_ngram_agreements[ngram] = full_ngram_agreements.get(ngram, 0) + 1
-                else:
-                    partial_ngram_agreements[ngram] = partial_ngram_agreements.get(ngram, 0) + 1
-
-        all_keys = set(full_ngram_agreements.keys()) | set(partial_ngram_agreements.keys())
-        all_ngram_agreements = [[f'{key}-ngram', full_ngram_agreements.get(key, 0), partial_ngram_agreements.get(key, 0)] for key in all_keys]      
-        return all_ngram_agreements        
+            # Get the list of partial and full agreements for the current ngram
+            ngram_agreements_list = self.get_single_ngram_agreement_list(ngram_df)
+            # Add the list of partial and full agreements to the ngram_agreements dictionary
+            ngram_agreements[ngram] = ngram_agreements_list
+        # Get the list of all the keys in the ngram_agreements dictionary
+        all_keys = list(ngram_agreements.keys())
+        all_ngram_agreements = [[key] + list(agreement) for key, agreement in ngram_agreements.items()]
+        return all_ngram_agreements 
+    
+    def get_single_ngram_agreement_list(self, df):         
+        partial_agreements = 0
+        full_agreements = 0
+        for row in range(len(df.index)):
+            if 'None' in df.iloc[row].values:
+                partial_agreements += 1
+            else:
+                full_agreements += 1
+        return full_agreements, partial_agreements
 
     def create_single_annotations_table(self, annotated_df):
         # Create the pivot table with 'token' as index and 'annotator_id' as columns
@@ -137,7 +143,6 @@ class Label_Metrics :
         # Set the 'token' column as the index again
         result_df = pivot_df.set_index('token')
         result_df = result_df.fillna('None')
-
         return result_df
 
     def get_accumulated_table(self) -> pd.DataFrame:

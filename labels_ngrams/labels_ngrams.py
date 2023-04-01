@@ -159,12 +159,12 @@ class Labels_Ngram_Metrics :
                         if label not in ngram_labels[ngram]:
                             ngram_labels[ngram].append(label)
         return ngram_labels
+    
 
-    def get_ngrams_agreements_lists(self, df):
+    def get_ngrams_labels_agreements_lists(self, df):
         # Create a dictionary to store the ngrams dataframes
-        ngrams_dfs = {}        
-        partial_ngram_agreements = {}
-        full_ngram_agreements = {}
+        ngrams_dfs = {}
+        ngram_labels_agreements = {}
         # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
@@ -172,20 +172,54 @@ class Labels_Ngram_Metrics :
             ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
-            # ngrams_dfs[ngram] = ngrams_dfs[ngram].fillna('None')
-            # iterate through each row of the new table
-            for row in ngrams_dfs[ngram].index:
-                # find the majority label count of each row
-                majority_label_count = ngrams_dfs[ngram].loc[row].value_counts().max()
-                full_agreement = (majority_label_count == self.annotator_count)
-                if full_agreement:
-                    full_ngram_agreements[ngram] = full_ngram_agreements.get(ngram, 0) + 1
+            # iterate through each column of the new table
+            for col in ngrams_dfs[ngram].columns:
+                unique_labels = []
+                # find all unique labels in column
+                unique_labels = ngrams_dfs[ngram][col].unique()
+                # update ngram_labels[ngram] with the unique labels
+                # ngram_labels[ngram] should only be updated with unique labels
+                # if ngram_labels[ngram] is empty
+                if ngram_labels_agreements.get(ngram) is None:
+                    ngram_labels_agreements[ngram] = unique_labels.tolist()
                 else:
-                    partial_ngram_agreements[ngram] = partial_ngram_agreements.get(ngram, 0) + 1
+                    for label in unique_labels:
+                        if label not in ngram_labels_agreements[ngram]:
+                            ngram_labels_agreements[ngram].append(label)
+        return ngram_labels_agreements
 
-        all_keys = set(full_ngram_agreements.keys()) | set(partial_ngram_agreements.keys())
-        all_ngram_agreements = [[key, full_ngram_agreements.get(key, 0), partial_ngram_agreements.get(key, 0)] for key in all_keys]      
-        return all_ngram_agreements 
+    def get_all_ngrams_agreements_lists(self, df):
+        # Create a dictionary to store the ngrams dataframes
+        ngrams_dfs = {}    
+        # Create a dictionary to store the ngrams agreements lists
+        # The keys will be the ngrams and the values will be the lists of partial and full agreements
+        # The lists will be in the form [full_agreements, partial_agreements]
+        ngram_agreements = {}   
+        # Loop through the dataframe df and create a dataframe for each ngram
+        for ngram in df['ngram'].unique():
+            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
+            # drop the ngram column
+            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
+        # Loop through all the dataframes in ngrams 
+        for ngram, ngram_df in ngrams_dfs.items():
+            # Get the list of partial and full agreements for the current ngram
+            ngram_agreements_list = self.get_single_ngram_agreement_list(ngram_df)
+            # Add the list of partial and full agreements to the ngram_agreements dictionary
+            ngram_agreements[ngram] = ngram_agreements_list
+        # Get the list of all the keys in the ngram_agreements dictionary
+        all_keys = list(ngram_agreements.keys())
+        all_ngram_agreements = [[key, ngram_agreements.get(key, 0)] for key in all_keys]     
+        return ngram_agreements
+    
+    def get_single_ngram_agreement_list(self, df):         
+        partial_agreements = 0
+        full_agreements = 0
+        for row in range(len(df.index)):
+            if 'None' in df.iloc[row].values:
+                partial_agreements += 1
+            else:
+                full_agreements += 1
+        return [full_agreements, partial_agreements]
 
     def get_token_label_labels(self, tokens:list, mentions: dict) -> list:
         """
