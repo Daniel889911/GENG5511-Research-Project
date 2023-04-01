@@ -132,84 +132,94 @@ class Labels_Ngram_Metrics :
             # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
-
-    def get_list_labels_for_ngrams(self, df):
+  
+    def split_df_into_dfngrams(self, df):
         # Create a dictionary to store the ngrams dataframes
-        ngrams_dfs = {}
-        ngram_labels = {}
+        ngrams_dfs = {}    
         # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
             # drop the ngram column
             ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
-        # Loop through all the dataframes in ngrams 
-        for ngram, ngram_df in ngrams_dfs.items():
-            # iterate through each column of the new table
-            for col in ngrams_dfs[ngram].columns:
-                unique_labels = []
-                # find all unique labels in column
-                unique_labels = ngrams_dfs[ngram][col].unique()
-                # update ngram_labels[ngram] with the unique labels
-                # ngram_labels[ngram] should only be updated with unique labels
-                # if ngram_labels[ngram] is empty
-                if ngram_labels.get(ngram) is None:
-                    ngram_labels[ngram] = unique_labels.tolist()
-                else:
-                    for label in unique_labels:
-                        if label not in ngram_labels[ngram]:
-                            ngram_labels[ngram].append(label)
-        return ngram_labels
+        return ngrams_dfs
     
-
-    def get_ngrams_labels_agreements_lists(self, df):
+    def get_labels_ngrams_metrics(self, df):
         # Create a dictionary to store the ngrams dataframes
         ngrams_dfs = {}
-        ngram_labels_agreements = {}
-        # Loop through the dataframe df and create a dataframe for each ngram
-        for ngram in df['ngram'].unique():
-            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
-            # drop the ngram column
-            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
+        # Create a dictionary to store the ngrams metrics
+        ngram_metrics = {}
+        # Call split_df_into_dfngrams to create a dataframe for each ngram
+        ngrams_dfs = self.split_df_into_dfngrams(df)
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
-            # iterate through each column of the new table
-            for col in ngrams_dfs[ngram].columns:
-                unique_labels = []
-                # find all unique labels in column
-                unique_labels = ngrams_dfs[ngram][col].unique()
-                # update ngram_labels[ngram] with the unique labels
-                # ngram_labels[ngram] should only be updated with unique labels
-                # if ngram_labels[ngram] is empty
-                if ngram_labels_agreements.get(ngram) is None:
-                    ngram_labels_agreements[ngram] = unique_labels.tolist()
-                else:
-                    for label in unique_labels:
-                        if label not in ngram_labels_agreements[ngram]:
-                            ngram_labels_agreements[ngram].append(label)
-        return ngram_labels_agreements
+            # Get the metrics for the current ngram
+            label_metrics_list = self.get_label_agreements_lists(ngram_df)
+            ngram_metrics_list = self.get_single_ngram_agreement_list(ngram_df)
+            # Add the metrics to the ngram_metrics dictionary
+            ngram_metrics[ngram] = label_metrics_list, ngram_metrics_list
+        return ngram_metrics
+    
+    def calculate_label_percentage_agreements(self, label_metrics_list):
+        # Create a dictionary to store the label percentage agreements
+        label_percentage_agreements = {}
+        for label, metrics in label_metrics_list.items(): 
+            # Calculate the percentage agreement for each label metric
+            ngram_percentage_metrics = {}
+            full_agreements = metrics[0]
+            partial_agreements = metrics[1]
+            if full_agreements + partial_agreements > 0:
+                ngram_percentage_metrics[label] = full_agreements / (full_agreements + partial_agreements)
+            else:
+                ngram_percentage_metrics[label] = 0.0    
+            # Add the label percentage metrics to the overall dictionary
+        return ngram_percentage_metrics
+    
+    def calculate_ngram_percentage_agreements(self, ngram_metrics_list):
+        # Calculate the percentage agreement for each ngram metric
+        ngram_percentage_metrics = ngram_metrics_list[0] / (ngram_metrics_list[0] + ngram_metrics_list[1])
+        return ngram_percentage_metrics        
+    
+    def calculate_label__ngram_percentage_agreements(self, label_percentage_agreements, ngram_percentage_agreements):
+        # Calculate the percentage agreement for each label/ngram metric
+        label_ngram_percentage_metrics = {}
+        for label, metrics in label_percentage_agreements.items():
+            combined_metrics = 
+
+    
+    def convert_labels_ngrams_metrics_for_heat_map(self, ngram_metrics):
+        # Create a dictionary to store the ngrams dataframes
+        heat_map_metrics = []
+        # Loop through all ngrams in ngram_metrics
+        for ngram, metrics in ngram_metrics.items():
+            # Get the metrics for the current ngram
+            label_metrics_list = metrics[0]
+            ngram_metrics_list = metrics[1]
+            # Calculate the label percentage agreements for label_metrics_list
+            label_percentage_agreements = self.calculate_label_percentage_agreements(ngram, label_metrics_list)
+            # Calculate the ngram percentage agreements for ngram_metrics_list
+            ngram_percentage_agreements = self.calculate_ngram_percentage_agreements(ngram_metrics_list)
+            # Calculate the label/ ngram percentage agreements for label_metrics_list
+            label_ngram_percentage_agreements = self.calculate_label__ngram_percentage_agreements(label_percentage_agreements, ngram_percentage_agreements)
+            # Add the metrics to the heat_map_metrics list
+            heat_map_metrics.append(label_ngram_percentage_agreements)
+        ngram_metrics
+        return ngram_metrics
 
     def get_all_ngrams_agreements_lists(self, df):
         # Create a dictionary to store the ngrams dataframes
-        ngrams_dfs = {}    
+        ngrams_dfs = {}
         # Create a dictionary to store the ngrams agreements lists
-        # The keys will be the ngrams and the values will be the lists of partial and full agreements
-        # The lists will be in the form [full_agreements, partial_agreements]
-        ngram_agreements = {}   
-        # Loop through the dataframe df and create a dataframe for each ngram
-        for ngram in df['ngram'].unique():
-            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
-            # drop the ngram column
-            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
+        ngram_agreements = {}
+        # Call split_df_into_dfngrams to create a dataframe for each ngram
+        ngrams_dfs = self.split_df_into_dfngrams(df)
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
             # Get the list of partial and full agreements for the current ngram
             ngram_agreements_list = self.get_single_ngram_agreement_list(ngram_df)
             # Add the list of partial and full agreements to the ngram_agreements dictionary
             ngram_agreements[ngram] = ngram_agreements_list
-        # Get the list of all the keys in the ngram_agreements dictionary
-        all_keys = list(ngram_agreements.keys())
-        all_ngram_agreements = [[key, ngram_agreements.get(key, 0)] for key in all_keys]     
-        return ngram_agreements
+        all_ngram_agreements = [[key] + list(agreement) for key, agreement in ngram_agreements.items()]
+        return all_ngram_agreements 
     
     def get_single_ngram_agreement_list(self, df):         
         partial_agreements = 0
@@ -341,10 +351,9 @@ class Labels_Ngram_Metrics :
                 full_label_agreements[majority_label] = full_label_agreements.get(majority_label, 0) + 1
 
         all_keys = set(full_label_agreements.keys()) | set(partial_label_agreements.keys())
-        all_label_agreements = [[key, full_label_agreements.get(key, 0), partial_label_agreements.get(key, 0)] for key in all_keys]
-
-        return all_label_agreements       
-
+        all_label_agreements = [{key: [full_label_agreements.get(key, 0), partial_label_agreements.get(key, 0)]} for key in all_keys]
+        return all_label_agreements      
+  
     def list_To_String(self, List: list) -> str:
         """
             Converts a list into a string 

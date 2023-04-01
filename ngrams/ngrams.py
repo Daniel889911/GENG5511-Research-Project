@@ -99,28 +99,31 @@ class Label_Metrics :
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
 
         return annotated_df
-
-    def get_all_ngrams_agreements_lists(self, df):
+    
+    def split_df_into_dfngrams(self, df):
         # Create a dictionary to store the ngrams dataframes
         ngrams_dfs = {}    
-        # Create a dictionary to store the ngrams agreements lists
-        # The keys will be the ngrams and the values will be the lists of partial and full agreements
-        # The lists will be in the form [full_agreements, partial_agreements]
-        ngram_agreements = {}   
         # Loop through the dataframe df and create a dataframe for each ngram
         for ngram in df['ngram'].unique():
             ngrams_dfs[ngram] = df[df['ngram'] == ngram]
             # drop the ngram column
             ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
+        return ngrams_dfs
+
+    def get_all_ngrams_agreements_lists(self, df):
+        # Create a dictionary to store the ngrams dataframes
+        ngrams_dfs = {}
+        # Create a dictionary to store the ngrams agreements lists
+        ngram_agreements = {}
+        # Call split_df_into_dfngrams to create a dataframe for each ngram
+        ngrams_dfs = self.split_df_into_dfngrams(df)
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
             # Get the list of partial and full agreements for the current ngram
             ngram_agreements_list = self.get_single_ngram_agreement_list(ngram_df)
             # Add the list of partial and full agreements to the ngram_agreements dictionary
             ngram_agreements[ngram] = ngram_agreements_list
-        # Get the list of all the keys in the ngram_agreements dictionary
-        all_keys = list(ngram_agreements.keys())
-        all_ngram_agreements = [[key] + list(agreement) for key, agreement in ngram_agreements.items()]
+        all_ngram_agreements = [{key: list(agreement)} for key, agreement in ngram_agreements.items()]
         return all_ngram_agreements 
     
     def get_single_ngram_agreement_list(self, df):         

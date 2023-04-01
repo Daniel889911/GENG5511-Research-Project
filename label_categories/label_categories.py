@@ -89,7 +89,7 @@ class Label_Metrics :
             annotator_id = annotator.name
             mention = annotator.get_doc_mentions(doc_idx)
             token = annotator.get_doc_tokens(doc_idx)
-            annotated = self.get_token_label(token, mention)
+            annotated = self.get_token_label_labels(token, mention)
 
             # Create a temporary DataFrame to store the current annotator's data
             temp_df = pd.DataFrame(annotated, columns=['token', 'label'])
@@ -161,7 +161,7 @@ class Label_Metrics :
                 full_label_agreements[majority_label] = full_label_agreements.get(majority_label, 0) + 1
 
         all_keys = set(full_label_agreements.keys()) | set(partial_label_agreements.keys())
-        all_label_agreements = [[key, full_label_agreements.get(key, 0), partial_label_agreements.get(key, 0)] for key in all_keys]
+        all_label_agreements = [{key: [full_label_agreements.get(key, 0), partial_label_agreements.get(key, 0)]} for key in all_keys]
 
         return all_label_agreements
 
