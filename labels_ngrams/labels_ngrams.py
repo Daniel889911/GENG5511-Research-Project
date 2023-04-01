@@ -143,7 +143,7 @@ class Labels_Ngram_Metrics :
             ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)
         return ngrams_dfs
     
-    def get_labels_ngrams_metrics(self, df):
+    def get_labels_and_ngrams(self, df):
         # Create a dictionary to store the ngrams dataframes
         ngrams_dfs = {}
         # Create a dictionary to store the ngrams metrics
@@ -161,30 +161,32 @@ class Labels_Ngram_Metrics :
     
     def calculate_label_percentage_agreements(self, label_metrics_list):
         # Create a dictionary to store the label percentage agreements
-        label_percentage_agreements = {}
-        for label, metrics in label_metrics_list.items(): 
+        label_percentage_metrics = {}
+        for label in label_metrics_list: 
             # Calculate the percentage agreement for each label metric
-            ngram_percentage_metrics = {}
-            full_agreements = metrics[0]
-            partial_agreements = metrics[1]
-            if full_agreements + partial_agreements > 0:
-                ngram_percentage_metrics[label] = full_agreements / (full_agreements + partial_agreements)
-            else:
-                ngram_percentage_metrics[label] = 0.0    
-            # Add the label percentage metrics to the overall dictionary
-        return ngram_percentage_metrics
+            for key, value in label.items():
+                if key == 'None':
+                    continue
+                full_agreements = value[0]
+                partial_agreements = value[1]
+                if full_agreements + partial_agreements > 0:
+                    label_percentage_metrics[key] = full_agreements / (full_agreements + partial_agreements)
+                else:
+                    label_percentage_metrics[key] = 0.0    
+        return label_percentage_metrics
     
     def calculate_ngram_percentage_agreements(self, ngram_metrics_list):
         # Calculate the percentage agreement for each ngram metric
         ngram_percentage_metrics = ngram_metrics_list[0] / (ngram_metrics_list[0] + ngram_metrics_list[1])
         return ngram_percentage_metrics        
     
-    def calculate_label__ngram_percentage_agreements(self, label_percentage_agreements, ngram_percentage_agreements):
+    def calculate_label__ngram_percentage_agreements(self, label_percentage_agreements, ngram_percentage_agreements, ngram):
         # Calculate the percentage agreement for each label/ngram metric
         label_ngram_percentage_metrics = {}
         for label, metrics in label_percentage_agreements.items():
-            combined_metrics = 
-
+            combined_metrics = metrics * ngram_percentage_agreements
+            label_ngram_percentage_metrics[label] = ngram, combined_metrics
+        return label_ngram_percentage_metrics
     
     def convert_labels_ngrams_metrics_for_heat_map(self, ngram_metrics):
         # Create a dictionary to store the ngrams dataframes
@@ -195,15 +197,14 @@ class Labels_Ngram_Metrics :
             label_metrics_list = metrics[0]
             ngram_metrics_list = metrics[1]
             # Calculate the label percentage agreements for label_metrics_list
-            label_percentage_agreements = self.calculate_label_percentage_agreements(ngram, label_metrics_list)
+            label_percentage_agreements = self.calculate_label_percentage_agreements(label_metrics_list)
             # Calculate the ngram percentage agreements for ngram_metrics_list
             ngram_percentage_agreements = self.calculate_ngram_percentage_agreements(ngram_metrics_list)
             # Calculate the label/ ngram percentage agreements for label_metrics_list
-            label_ngram_percentage_agreements = self.calculate_label__ngram_percentage_agreements(label_percentage_agreements, ngram_percentage_agreements)
+            label_ngram_percentage_agreements = self.calculate_label__ngram_percentage_agreements(label_percentage_agreements, ngram_percentage_agreements, ngram)
             # Add the metrics to the heat_map_metrics list
             heat_map_metrics.append(label_ngram_percentage_agreements)
-        ngram_metrics
-        return ngram_metrics
+        return heat_map_metrics
 
     def get_all_ngrams_agreements_lists(self, df):
         # Create a dictionary to store the ngrams dataframes
