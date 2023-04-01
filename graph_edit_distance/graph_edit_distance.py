@@ -223,7 +223,7 @@ class Label_Metrics :
         result_df = pd.concat([same_label_df, different_label_df], axis=0)
         return result_df
 
-    def pivot_to_long_format_graph_edit(self, pivot_table: pd.DataFrame) -> pd.DataFrame:
+    def pivot_dataframe(self, pivot_table: pd.DataFrame) -> pd.DataFrame:
         # Reset the index of the pivot_table to bring 'token' back as a column
         pivot_table_reset = pivot_table.reset_index()
         long_format_df = pd.melt(pivot_table_reset, id_vars='token', var_name='annotator_id', value_name='label')

@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-def create_heatmap2(ngram_metrics):
+def create_heatmap(ngram_metrics):
     data = []
     for metric_dict in ngram_metrics:
         for label, (ngram, percentage_value) in metric_dict.items():
@@ -26,7 +26,7 @@ def create_heatmap2(ngram_metrics):
     # Show the heatmap
     plt.show()
 
-def create_heatmap(ngram_metrics):
+def create_heatmap2(ngram_metrics):
     data = []
     for metric_dict in ngram_metrics:
         for label, (ngram, percentage_value) in metric_dict.items():

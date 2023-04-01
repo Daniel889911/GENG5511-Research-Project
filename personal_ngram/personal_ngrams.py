@@ -30,7 +30,7 @@ class Label_Metrics :
                 The same annotated document ids annotated by all the annotators 
 
         """ 
-         same_docs = set(self.annotator_list[0].get_doc_idxs())
+        same_docs = set(self.annotator_list[0].get_doc_idxs())
 
         for annotator in self.annotator_list[1:]:
             same_docs.intersection_update(annotator.get_doc_idxs())
