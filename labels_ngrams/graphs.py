@@ -4,6 +4,10 @@ import pandas as pd
 import seaborn as sns
 
 def create_heatmap2(ngram_metrics):
+    data = []
+    for metric_dict in ngram_metrics:
+        for label, (ngram, percentage_value) in metric_dict.items():
+            data.append({'Label': label, 'Ngram': ngram, 'Metric': percentage_value})
     df = pd.DataFrame(ngram_metrics, columns=['Label', 'Ngram', 'Metric'])
     df2 = df.sort_values(by="Metric", ascending=True)
     df3 = df2.pivot("Label", "Ngram", values='Metric')
@@ -23,8 +27,11 @@ def create_heatmap2(ngram_metrics):
     plt.show()
 
 def create_heatmap(ngram_metrics):
-    df = pd.DataFrame(ngram_metrics, columns =['Label', 'Ngram', 'Metric'])
+    data = []
+    for metric_dict in ngram_metrics:
+        for label, (ngram, percentage_value) in metric_dict.items():
+            data.append({'Label': label, 'Ngram': ngram, 'Metric': percentage_value})
+    df = pd.DataFrame(data, columns=['Label', 'Ngram', 'Metric'])
     df2 = df.sort_values(by="Metric", ascending=True)
-    df3 = df2.pivot("Label", "Ngram",values='Metric')
-    sns.heatmap(df3,cmap='RdYlGn', annot=True)
-
+    df3 = df2.pivot("Label", "Ngram", values='Metric')
+    sns.heatmap(df3, cmap='RdYlGn', annot=True)
