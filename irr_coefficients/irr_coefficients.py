@@ -220,15 +220,12 @@ class Label_Metrics :
         krippendorff_values = cac_coefficient.krippendorff()
         krippendorff_alpha = krippendorff_values['est']['coefficient_value']
 
-        # Calculate fleiss kappa coefficient value for the accumulated table
         fleiss_values = cac_coefficient.fleiss()
         fleiss_alpha =  fleiss_values['est']['coefficient_value']
 
-        # Calculate Gwets AC1 value for the accumulated table
         gwet_values = cac_coefficient.gwet()
         gwet_alpha =  gwet_values['est']['coefficient_value']
 
-        # Calculate Conger kappa value for the accumulated table
         conger_values = cac_coefficient.conger()
         conger_alpha =  conger_values['est']['coefficient_value']
 
