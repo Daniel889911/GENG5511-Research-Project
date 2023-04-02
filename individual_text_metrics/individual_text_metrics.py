@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from irrCAC.raw import CAC
 from annotator import Annotator
 
 

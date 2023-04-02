@@ -4,8 +4,6 @@ import networkx as nx
 from annotator import Annotator
 import itertools
 from networkx.algorithms import isomorphism
-import grakel
-from grakel.kernels import ShortestPath
 
 class Label_Metrics :
 
