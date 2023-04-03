@@ -152,8 +152,7 @@ class Label_Metrics :
                 for label, count in counts.items():
                     # get the highest count and label in counts.items()
                     if count == counts.max():
-                        if not pd.isna(label) :
-                            partial_label_agreements[label] = partial_label_agreements.get(label, 0) + 1
+                        partial_label_agreements[label] = partial_label_agreements.get(label, 0) + 1
             else:
                 # If there is a full agreement, increment the count for the fully agreed label
                 majority_label = counts.idxmax()

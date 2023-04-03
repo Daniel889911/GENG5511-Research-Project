@@ -184,7 +184,7 @@ class Labels_Ngram_Metrics :
         # Calculate the percentage agreement for each label/ngram metric
         label_ngram_percentage_metrics = {}
         for label, metrics in label_percentage_agreements.items():
-            combined_metrics = metrics * ngram_percentage_agreements
+            combined_metrics = (metrics + ngram_percentage_agreements)/2
             label_ngram_percentage_metrics[label] = ngram, combined_metrics
         return label_ngram_percentage_metrics
     

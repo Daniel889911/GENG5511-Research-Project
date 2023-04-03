@@ -121,26 +121,38 @@ class Label_Metrics :
 
         return table
 
-    def calculate_individual_text_metrics_all_docs(self, df: pd.DataFrame) -> float:
+    def create_agreement_summary(self, df: pd.DataFrame) -> float:
         # Reset the index to make 'token' a column
         df = df.reset_index()
 
         # Create three empty lists for low, medium, and high agreement tokens
-        low_agreement = []
+        lowest_agreement = []
+        medium_low_agreement = []
         medium_agreement = []
+        medium_high_agreement = []
         high_agreement = []
 
         # Iterate through the rows of the dataframe and append tokens to the corresponding list
         for index, row in df.iterrows():
-            if row['percent_agreement'] < 30:
-                low_agreement.append(row['token'])
-            elif 30 <= row['percent_agreement'] <= 80:
+            if 0 <= row['percent_agreement'] < 20:
+                lowest_agreement.append(row['token'])
+            elif 20 <= row['percent_agreement'] < 40:
+                medium_low_agreement.append(row['token'])
+            elif 40 <= row['percent_agreement'] < 60:
                 medium_agreement.append(row['token'])
-            else:
+            elif 60 <= row['percent_agreement'] < 80:
+                medium_high_agreement.append(row['token'])
+            elif 80 <= row['percent_agreement'] <= 100:
                 high_agreement.append(row['token'])
 
         # Create a new dataframe with the low, medium, and high agreement columns
-        new_df = pd.DataFrame({'low_agreement': pd.Series(low_agreement), 'medium_agreement': pd.Series(medium_agreement), 'high_agreement': pd.Series(high_agreement)})
+        new_df = pd.DataFrame({
+            'lowest agreement': pd.Series(lowest_agreement, dtype='object'),
+            'medium low agreement': pd.Series(medium_low_agreement, dtype='object'),
+            'medium agreement': pd.Series(medium_agreement, dtype='object'),
+            'medium high agreement': pd.Series(medium_high_agreement, dtype='object'),
+            'high agreement': pd.Series(high_agreement, dtype='object')
+        })
         new_df = new_df.replace(pd.NA, '')
         return new_df
 
