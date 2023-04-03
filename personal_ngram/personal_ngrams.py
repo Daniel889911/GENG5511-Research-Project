@@ -169,7 +169,9 @@ class Label_Metrics :
                 agreement_percentage = token_data[1] * 100
 
                 for range_name, (low, high) in agreement_ranges.items():
-                    if low <= agreement_percentage <= high:
+                    if agreement_percentage == 100 :
+                        summary_data["high agreement"].append(token)
+                    if low <= agreement_percentage < high:
                         summary_data[range_name].append(token)
 
             annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
