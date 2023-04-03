@@ -134,21 +134,30 @@ class Label_Metrics :
     def get_annotator_label_agreements(self, df):
         df = df.fillna('None')
         annotators = list(df.columns)
+        annotator_token_counts = {annotator: {} for annotator in annotators}
         annotator_token_agreements = {annotator: [] for annotator in annotators}
+
         for index, row in df.iterrows():
             token = index
             most_common_label = row.value_counts().idxmax()
             for annotator in annotators:
                 annotator_label = row[annotator]
-                agreement = 0
-                disagreement = 0
+                if token not in annotator_token_counts[annotator]:
+                    annotator_token_counts[annotator][token] = {'agreement': 0, 'disagreement': 0}
+                
                 if annotator_label == most_common_label:
-                    agreement += 1
+                    annotator_token_counts[annotator][token]['agreement'] += 1
                 else:
-                    disagreement += 1
+                    annotator_token_counts[annotator][token]['disagreement'] += 1
+
+        for annotator, token_counts in annotator_token_counts.items():
+            for token, counts in token_counts.items():
+                agreement = counts['agreement']
+                disagreement = counts['disagreement']
                 agreement_percentage = agreement / (agreement + disagreement) * 100
                 disagreement_percentage = disagreement / (agreement + disagreement) * 100
                 annotator_token_agreements[annotator].append({token: [agreement_percentage, disagreement_percentage]})
+
         return annotator_token_agreements
 
     def create_agreement_summary(self, agreements_dict):

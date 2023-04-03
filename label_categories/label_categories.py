@@ -163,6 +163,45 @@ class Label_Metrics :
         all_label_agreements = [{key: [full_label_agreements.get(key, 0), partial_label_agreements.get(key, 0)]} for key in all_keys]
 
         return all_label_agreements
+    
+    def get_agreement_percentages(self, data):
+        new_data = []
+
+        for annotator_data in data:
+            annotator = list(annotator_data.keys())[0]
+            agreement, disagreement = annotator_data[annotator]
+            
+            if agreement + disagreement > 0:
+                percentage_agreement = agreement / (agreement + disagreement)
+            else:
+                percentage_agreement = 0.0
+
+            new_data.append({annotator: percentage_agreement})
+
+        return new_data
+
+    def create_agreement_summary(self, agreements_data):
+        agreement_ranges = {
+            "lowest agreement": (0, 20),
+            "medium-low agreement": (20, 40),
+            "medium agreement": (40, 60),
+            "medium-high agreement": (60, 80),
+            "high agreement": (80, 100)
+        }
+
+        summary_data = {key: [] for key in agreement_ranges.keys()}
+
+        for token_data in agreements_data:
+            token = list(token_data.keys())[0]
+            agreement_percentage = token_data[token] * 100
+
+            for range_name, (low, high) in agreement_ranges.items():
+                if low <= agreement_percentage <= high:
+                    summary_data[range_name].append(token)
+
+        summary_df = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+
+        return summary_df
 
     def list_To_String(self, List: list) -> str:
         """

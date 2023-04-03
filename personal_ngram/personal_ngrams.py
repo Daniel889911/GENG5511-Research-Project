@@ -127,8 +127,55 @@ class Label_Metrics :
             table = self.create_single_annotations_table(annotated_df)
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
+    
+    def get_agreement_percentages(self, data):
+        new_data = []
+        for annotator, labels_data in data.items():
+            new_labels_data = []
+
+            for label_data in labels_data:
+                key = label_data[0]
+                agreement = label_data[1]
+                disagreement = label_data[2]
+                if agreement + disagreement > 0:
+                    percentage_agreement = agreement / (agreement + disagreement)
+                else:
+                    percentage_agreement = 0.0
+                new_labels_data.append([key, percentage_agreement])
+
+            new_data.append({annotator: new_labels_data})
+
+        return new_data
 
 
+    def create_agreement_summary(self, agreements_list):
+        agreement_ranges = {
+            "lowest agreement": (0, 20),
+            "medium-low agreement": (20, 40),
+            "medium agreement": (40, 60),
+            "medium-high agreement": (60, 80),
+            "high agreement": (80, 100)
+        }
+
+        annotators_dfs = {}
+
+        for annotator_data in agreements_list:
+            annotator = list(annotator_data.keys())[0]
+            tokens_data = annotator_data[annotator]
+            summary_data = {key: [] for key in agreement_ranges.keys()}
+
+            for token_data in tokens_data:
+                token = token_data[0]
+                agreement_percentage = token_data[1] * 100
+
+                for range_name, (low, high) in agreement_ranges.items():
+                    if low <= agreement_percentage <= high:
+                        summary_data[range_name].append(token)
+
+            annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+
+        return annotators_dfs
+    
     def list_To_String(self, List: list) -> str:
         """
             Converts a list into a string 
