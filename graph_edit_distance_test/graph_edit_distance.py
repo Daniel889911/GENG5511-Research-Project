@@ -151,6 +151,78 @@ class Label_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
  
+    def create_rows_same_labels(self, start_row: int, end_row: int, df: pd.DataFrame) -> pd.DataFrame:
+        """
+            Creates a new DataFrame with the same label for all the annotators
+
+            Parameters:
+                rows :
+                    The number of rows to be same in the DataFrame
+                df :
+                    The DataFrame with the labels for all the annotators
+
+            Returns:
+                The new DataFrame with the same label for all the annotators
+        """
+        new_df = df.iloc[start_row:end_row].copy()
+        for row_idx in range(start_row, end_row):
+            row = df.iloc[row_idx]
+            mode = row.mode()
+            if not mode.empty:
+                most_common_label = mode[0]
+            else:
+                most_common_label = self.labels[0]
+            for col_idx in range(df.shape[1]):
+                new_df.iloc[row_idx, col_idx] = most_common_label
+        return new_df
+
+    def create_rows_different_labels(self, start_row: int, end_row: int, df: pd.DataFrame) -> pd.DataFrame:
+        """
+            Creates a new DataFrame with different labels for all the annotators
+
+            Parameters:
+                rows :
+                    The number of rows to be different in the DataFrame
+                df :
+                    The DataFrame with the labels for all the annotators
+
+            Returns:
+                The new DataFrame with different labels for all the annotators
+
+        """
+        new_df = df.iloc[start_row:end_row].copy()
+        for row_idx in range(new_df.shape[0]):
+            used_labels = []
+            used_labels = [new_df.iloc[row_idx, 0]]
+            available_labels = [label for label in self.labels if label not in used_labels]
+
+            for col_idx in range(1, df.shape[1]):
+                current_label = df.iloc[row_idx, col_idx]
+
+                if current_label in available_labels:
+                    new_label = current_label
+                else:
+                    new_label = available_labels.pop(0)
+
+                new_df.iloc[row_idx, col_idx] = new_label
+                used_labels.append(new_label)
+                available_labels = [label for label in self.labels if label not in used_labels]
+        return new_df
+    
+    def calculate_same_different_row_numbers(self, percentage: float, df: pd.DataFrame) -> tuple:
+        total_rows = len(df)
+        same_rows = int(total_rows * percentage)
+        different_rows = total_rows - same_rows
+        return (same_rows, different_rows, total_rows) 
+ 
+    def create_df_same_different(self, percentage: float, df: pd.DataFrame) -> pd.DataFrame:
+        same_rows, different_rows, total_rows = self.calculate_same_different_row_numbers(percentage, df)
+        print(f'Creating a DataFrame with {same_rows} rows with same labels and {different_rows} rows with different labels')
+        same_label_df = self.create_rows_same_labels(0, same_rows, df)
+        different_label_df = self.create_rows_different_labels(same_rows, total_rows, df)
+        result_df = pd.concat([same_label_df, different_label_df], axis=0)
+        return result_df
+
     def pivot_dataframe(self, pivot_table: pd.DataFrame) -> pd.DataFrame:
         # Reset the index of the pivot_table to bring 'token' back as a column
         pivot_table_reset = pivot_table.reset_index()
@@ -192,16 +264,7 @@ class Label_Metrics :
         return G
 
     @classmethod
-    def create_annotator_graphs2(cls, data: pd.DataFrame, annotator_nodes: set) -> dict:
-        return {annotator: cls.create_annotator_graph(data, annotator) for annotator in annotator_nodes}
-
-    @classmethod
     def create_annotator_graphs(cls, data: pd.DataFrame, annotator_nodes: set) -> dict:
-        print("Inside create_annotator_graphs function")
-        print("Data:")
-        print(data)
-        print("Annotator nodes:")
-        print(annotator_nodes)
         return {annotator: cls.create_annotator_graph(data, annotator) for annotator in annotator_nodes}
 
     @classmethod

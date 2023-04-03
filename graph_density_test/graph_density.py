@@ -4,8 +4,6 @@ import networkx as nx
 from annotator import Annotator
 import itertools
 from networkx.algorithms import isomorphism
-import grakel
-from grakel.kernels import ShortestPath
 
 class Label_Metrics :
 
@@ -59,7 +57,6 @@ class Label_Metrics :
         self.same_docs = same_docs
 
         return self.same_docs
-
     
     def get_token_label(self, tokens:list, mentions: dict) -> list:
         """
@@ -118,7 +115,7 @@ class Label_Metrics :
             # Append the temporary DataFrame to the main DataFrame using pandas.concat
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
 
-        return annotated_df
+        return annotated_df   
 
     def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
         # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
@@ -151,6 +148,78 @@ class Label_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
  
+    def create_rows_same_labels(self, start_row: int, end_row: int, df: pd.DataFrame) -> pd.DataFrame:
+        """
+            Creates a new DataFrame with the same label for all the annotators
+
+            Parameters:
+                rows :
+                    The number of rows to be same in the DataFrame
+                df :
+                    The DataFrame with the labels for all the annotators
+
+            Returns:
+                The new DataFrame with the same label for all the annotators
+        """
+        new_df = df.iloc[start_row:end_row].copy()
+        for row_idx in range(start_row, end_row):
+            row = df.iloc[row_idx]
+            mode = row.mode()
+            if not mode.empty:
+                most_common_label = mode[0]
+            else:
+                most_common_label = self.labels[0]
+            for col_idx in range(df.shape[1]):
+                new_df.iloc[row_idx, col_idx] = most_common_label
+        return new_df
+
+    def create_rows_different_labels(self, start_row: int, end_row: int, df: pd.DataFrame) -> pd.DataFrame:
+        """
+            Creates a new DataFrame with different labels for all the annotators
+
+            Parameters:
+                rows :
+                    The number of rows to be different in the DataFrame
+                df :
+                    The DataFrame with the labels for all the annotators
+
+            Returns:
+                The new DataFrame with different labels for all the annotators
+
+        """
+        new_df = df.iloc[start_row:end_row].copy()
+        for row_idx in range(new_df.shape[0]):
+            used_labels = []
+            used_labels = [new_df.iloc[row_idx, 0]]
+            available_labels = [label for label in self.labels if label not in used_labels]
+
+            for col_idx in range(1, df.shape[1]):
+                current_label = df.iloc[row_idx, col_idx]
+
+                if current_label in available_labels:
+                    new_label = current_label
+                else:
+                    new_label = available_labels.pop(0)
+
+                new_df.iloc[row_idx, col_idx] = new_label
+                used_labels.append(new_label)
+                available_labels = [label for label in self.labels if label not in used_labels]
+        return new_df
+    
+    def calculate_same_different_row_numbers(self, percentage: float, df: pd.DataFrame) -> tuple:
+        total_rows = len(df)
+        same_rows = int(total_rows * percentage)
+        different_rows = total_rows - same_rows
+        return (same_rows, different_rows, total_rows) 
+ 
+    def create_df_same_different(self, percentage: float, df: pd.DataFrame) -> pd.DataFrame:
+        same_rows, different_rows, total_rows = self.calculate_same_different_row_numbers(percentage, df)
+        print(f'Creating a DataFrame with {same_rows} rows with same labels and {different_rows} rows with different labels')
+        same_label_df = self.create_rows_same_labels(0, same_rows, df)
+        different_label_df = self.create_rows_different_labels(same_rows, total_rows, df)
+        result_df = pd.concat([same_label_df, different_label_df], axis=0)
+        return result_df
+
     def pivot_dataframe(self, pivot_table: pd.DataFrame) -> pd.DataFrame:
         # Reset the index of the pivot_table to bring 'token' back as a column
         pivot_table_reset = pivot_table.reset_index()
@@ -182,105 +251,40 @@ class Label_Metrics :
         return accumulated_table
 
     @classmethod
-    def create_annotator_graph(cls,data: pd.DataFrame, annotator: str) -> nx.Graph:
+    def create_agreement_graph(cls, df: pd.DataFrame) -> nx.Graph:
         G = nx.Graph()
-        annotator_data = data[data['annotator_id'] == annotator]
-        for index, row in annotator_data.iterrows():
-            item = row['token']
-            annotation = row['label']
-            G.add_edge(item, annotation)
+        for _, row in df.iterrows():
+            annotator, token, label = row['annotator_id'], row['token'], row['label']
+            G.add_node(annotator, type='annotator')
+            G.add_node((token, label), type='annotation')
+            G.add_edge(annotator, (token, label))
         return G
 
     @classmethod
-    def create_annotator_graphs2(cls, data: pd.DataFrame, annotator_nodes: set) -> dict:
-        return {annotator: cls.create_annotator_graph(data, annotator) for annotator in annotator_nodes}
+    def custom_graph_density(cls, G):
+        annotator_degrees = {}
+        for node in G.nodes():
+            if G.nodes[node]['type'] == 'annotator':
+                annotator_degrees[node] = G.degree(node)
+        total_edges_by_annotator = {}
+        for annotator, degree in annotator_degrees.items():
+            total_edges_by_annotator[annotator] = degree
+        annotator_edges = sum(total_edges_by_annotator.values())
+        # Count the total number of edges for nodes with more than two edge
+        edge_count = sum([degree for _, degree in G.degree() if degree > 2]) - annotator_edges
+        print(f'Edge count: {edge_count}')
+        
+        # Get the total number of edges in the graph
+        total_edges = G.number_of_edges()
 
-    @classmethod
-    def create_annotator_graphs(cls, data: pd.DataFrame, annotator_nodes: set) -> dict:
-        print("Inside create_annotator_graphs function")
-        print("Data:")
-        print(data)
-        print("Annotator nodes:")
-        print(annotator_nodes)
-        return {annotator: cls.create_annotator_graph(data, annotator) for annotator in annotator_nodes}
+        # Calculate the percentage of edges for nodes with more than one edge
+        if total_edges == 0:
+            return 0
+        else:
+            return edge_count / total_edges
 
-    @classmethod
-    def calculate_pairwise_ged(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_ged = {}
-        for annotator1, annotator2 in itertools.combinations(annotator_nodes, 2):
-            pair_key = (annotator1, annotator2)
-            if pair_key in pairwise_ged:
-                continue
-            ged_value = nx.graph_edit_distance(annotator_graphs[annotator1], annotator_graphs[annotator2], timeout = 10)
-            pairwise_ged[pair_key] = ged_value
-        return pairwise_ged
 
-    @classmethod
-    def calculate_pairwise_mcs(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_mcs = {}
-        for annotator1, annotator2 in itertools.combinations(annotator_nodes, 2):
-            pair_key = (annotator1, annotator2)
-            if pair_key in pairwise_mcs:
-                continue
 
-            GM = isomorphism.GraphMatcher(annotator_graphs[annotator1], annotator_graphs[annotator2])
-            mcs_size = max([len(GM.subgraph_is_isomorphic()) for GM in GM.subgraph_isomorphisms_iter()])
-
-            pairwise_mcs[pair_key] = mcs_size
-        return pairwise_mcs
-
-    @classmethod
-    def calculate_pairwise_jaccard_similarity(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_jaccard_similarity = {}
-        for annotator1, annotator2 in itertools.combinations(annotator_nodes, 2):
-            pair_key = (annotator1, annotator2)
-            if pair_key in pairwise_jaccard_similarity:
-                continue
-            nodes_annotator1 = set(annotator_graphs[annotator1].nodes())
-            nodes_annotator2 = set(annotator_graphs[annotator2].nodes())
-            intersection = nodes_annotator1.intersection(nodes_annotator2)
-            union = nodes_annotator1.union(nodes_annotator2)
-            jaccard_similarity = len(intersection) / len(union)
-            pairwise_jaccard_similarity[pair_key] = jaccard_similarity
-        return pairwise_jaccard_similarity
-
-    @classmethod
-    def calculate_pairwise_shortest_path_kernel(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
-        pairwise_shortest_path_kernel = {}
-        kernel = ShortestPath(normalize=True)
-
-        # Convert NetworkX graphs to GraKeL graphs
-        grakel_graphs = {annotator: grakel.graph_from_networkx(annotator_graphs[annotator], node_labels_type=str, edge_labels_type=str) for annotator in annotator_nodes}
-
-        # Compute the shortest path kernel
-        kernel_matrix = kernel.fit_transform(list(grakel_graphs.values()))
-
-        # Store the pairwise kernel values in a dictionary
-        for i, annotator1 in enumerate(annotator_nodes):
-            for j, annotator2 in enumerate(annotator_nodes):
-                if i < j:
-                    pair_key = (annotator1, annotator2)
-                    pairwise_shortest_path_kernel[pair_key] = kernel_matrix[i, j]
-
-        return pairwise_shortest_path_kernel
-    
-    @staticmethod
-    def calculate_pairwise_reliability(pairwise_ged: dict, annotator_graphs: dict) -> dict:
-        pairwise_reliability = {}
-        for pair, ged in pairwise_ged.items():
-            annotator1, annotator2 = pair
-            graph1 = annotator_graphs[annotator1]
-            graph2 = annotator_graphs[annotator2]
-
-            total_nodes = len(graph1.nodes) + len(graph2.nodes)
-            reliability = 1 - (ged / total_nodes)
-            pairwise_reliability[pair] = reliability
-        return pairwise_reliability
-
-    @staticmethod
-    def calculate_overall_reliability(pairwise_reliability: dict) -> dict:
-        overall_reliability = sum(pairwise_reliability.values()) / len(pairwise_reliability)
-        return {'Overall Reliability' : overall_reliability}
     
 
 

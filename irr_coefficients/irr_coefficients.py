@@ -229,10 +229,10 @@ class Label_Metrics :
         conger_values = cac_coefficient.conger()
         conger_alpha =  conger_values['est']['coefficient_value']
 
-        coefficients_dict['krippendorff'] = krippendorff_alpha
-        coefficients_dict['fleiss'] = fleiss_alpha
-        coefficients_dict['gwets'] = gwet_alpha
-        coefficients_dict['conger'] = conger_alpha
+        coefficients_dict['krippendorff alpha'] = krippendorff_alpha
+        coefficients_dict['fleiss kappa'] = fleiss_alpha
+        coefficients_dict['gwets ac1'] = gwet_alpha
+        coefficients_dict['cohens kappa'] = conger_alpha
 
         return coefficients_dict
 
