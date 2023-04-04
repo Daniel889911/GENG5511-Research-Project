@@ -262,26 +262,25 @@ class Label_Metrics :
 
     @classmethod
     def custom_graph_density(cls, G):
-        annotator_degrees = {}
+        annotation_degrees = {}
         for node in G.nodes():
-            if G.nodes[node]['type'] == 'annotator':
-                annotator_degrees[node] = G.degree(node)
-        total_edges_by_annotator = {}
-        for annotator, degree in annotator_degrees.items():
-            total_edges_by_annotator[annotator] = degree
-        annotator_edges = sum(total_edges_by_annotator.values())
-        # Count the total number of edges for nodes with more than two edge
-        edge_count = sum([degree for _, degree in G.degree() if degree > 2]) - annotator_edges
-        print(f'Edge count: {edge_count}')
+            if G.nodes[node]['type'] == 'annotation':
+                annotation_degrees[node] = G.degree(node)
+        total_edges_by_annotation = {}
+        for annotation, degree in annotation_degrees.items():
+            total_edges_by_annotation[annotation] = degree
+        total_annotation_edges = sum(total_edges_by_annotation.values())
+        # Count the total number of edges for annotation nodes with more than two edges
+        edge_count = 0
+        for annotation, degree in annotation_degrees.items():
+            if degree > 2:
+                edge_count += degree
         
-        # Get the total number of edges in the graph
-        total_edges = G.number_of_edges()
-
         # Calculate the percentage of edges for nodes with more than one edge
-        if total_edges == 0:
+        if total_annotation_edges == 0:
             return 0
         else:
-            return edge_count / total_edges
+            return edge_count / total_annotation_edges
 
 
 
