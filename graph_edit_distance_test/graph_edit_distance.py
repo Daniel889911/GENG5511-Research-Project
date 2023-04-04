@@ -274,10 +274,28 @@ class Label_Metrics :
             pair_key = (annotator1, annotator2)
             if pair_key in pairwise_ged:
                 continue
-            ged_value = nx.graph_edit_distance(annotator_graphs[annotator1], annotator_graphs[annotator2], timeout = 10)
+            ged_value = nx.graph_edit_distance(annotator_graphs[annotator1], annotator_graphs[annotator2], timeout = 20)
             pairwise_ged[pair_key] = ged_value
         return pairwise_ged
+    
+    @staticmethod
+    def calculate_pairwise_reliability(pairwise_ged: dict, annotator_graphs: dict) -> dict:
+        pairwise_reliability = {}
+        for pair, ged in pairwise_ged.items():
+            annotator1, annotator2 = pair
+            graph1 = annotator_graphs[annotator1]
+            graph2 = annotator_graphs[annotator2]
 
+            total_nodes = len(graph1.nodes) + len(graph2.nodes)
+            reliability = 1 - (ged / total_nodes)
+            pairwise_reliability[pair] = reliability
+        return pairwise_reliability
+
+    @staticmethod
+    def calculate_overall_reliability(pairwise_reliability: dict) -> dict:
+        overall_reliability = sum(pairwise_reliability.values()) / len(pairwise_reliability)
+        return {'Overall Reliability' : overall_reliability}
+    
     @classmethod
     def calculate_pairwise_mcs(cls, annotator_graphs: dict, annotator_nodes: set) -> dict:
         pairwise_mcs = {}
@@ -326,24 +344,6 @@ class Label_Metrics :
                     pairwise_shortest_path_kernel[pair_key] = kernel_matrix[i, j]
 
         return pairwise_shortest_path_kernel
-    
-    @staticmethod
-    def calculate_pairwise_reliability(pairwise_ged: dict, annotator_graphs: dict) -> dict:
-        pairwise_reliability = {}
-        for pair, ged in pairwise_ged.items():
-            annotator1, annotator2 = pair
-            graph1 = annotator_graphs[annotator1]
-            graph2 = annotator_graphs[annotator2]
-
-            total_nodes = len(graph1.nodes) + len(graph2.nodes)
-            reliability = 1 - (ged / total_nodes)
-            pairwise_reliability[pair] = reliability
-        return pairwise_reliability
-
-    @staticmethod
-    def calculate_overall_reliability(pairwise_reliability: dict) -> dict:
-        overall_reliability = sum(pairwise_reliability.values()) / len(pairwise_reliability)
-        return {'Overall Reliability' : overall_reliability}
     
 
 

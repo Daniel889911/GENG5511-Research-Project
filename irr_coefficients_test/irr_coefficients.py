@@ -198,7 +198,7 @@ class Label_Metrics :
  
     def create_df_same_different(self, percentage: float, df: pd.DataFrame) -> pd.DataFrame:
         same_rows, different_rows, total_rows = self.calculate_same_different_row_numbers(percentage, df)
-        print(f'Creating a DataFrame with {same_rows} rows with same labels and {different_rows} rows with different labels')
+        # print(f'Creating a DataFrame with {same_rows} rows with same labels and {different_rows} rows with different labels')
         same_label_df = self.create_rows_same_labels(0, same_rows, df)
         different_label_df = self.create_rows_different_labels(same_rows, total_rows, df)
         result_df = pd.concat([same_label_df, different_label_df], axis=0)
@@ -232,7 +232,7 @@ class Label_Metrics :
         coefficients_dict['krippendorff'] = krippendorff_alpha
         coefficients_dict['fleiss'] = fleiss_alpha
         coefficients_dict['gwets'] = gwet_alpha
-        coefficients_dict['conger'] = conger_alpha
+        coefficients_dict['cohens'] = conger_alpha
 
         return coefficients_dict
 

@@ -3,19 +3,17 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-def create_bar_chart(data, x_label, y_label, title):
-    # Create a bar chart using Seaborn
-    sns.set(style="whitegrid")
-    ax = sns.barplot(x=[title], y=[data], palette="Blues_d")
+def plot_density_agreement(agreement_data, title='', x_axis_title='', y_axis_title=''):
+    plt.figure(figsize=(10, 6))
+    
+    x = list(agreement_data.keys())
+    y = list(agreement_data.values())
+    plt.plot(x, y)
 
-    # Add labels to the chart
-    ax.set(xlabel=x_label, ylabel=y_label, title=title)
-    ax.set_ylim([0, 1])  # Set the y-axis limits to start from 0 and go up to 1
-
-    # Add the value on top of the bar
-    ax.text(0, data + 0.01, str(round(data, 3)), color='black', ha='center')
-
-    # Show the chart
+    plt.xlabel(x_axis_title)
+    plt.ylabel(y_axis_title)
+    plt.title(title)
+    plt.grid()
     plt.show()
 
 
