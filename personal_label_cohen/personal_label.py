@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from irrCAC.raw import CAC
 from annotator import Annotator
+from sklearn.metrics import cohen_kappa_score
 
 class Label_Metrics :
 
@@ -38,11 +38,9 @@ class Label_Metrics :
 
         # Store the same annotated document ids in the class variable
         self.same_docs = same_docs
-
         return self.same_docs
-
     
-    def get_token_label(self, tokens:list, mentions: dict) -> list:
+    def get_token_label_labels(self, tokens:list, mentions: dict) -> list:
         """
             Gets the combined token, labels, and gets the correct position of tokens
 
@@ -65,11 +63,11 @@ class Label_Metrics :
             token = self.list_To_String(token)
             label = ment["labels"]
             label = self.list_To_String(label)
-            annotations_list1 = [token, label, start, end]    
+            annotations_list1 = [token, label]    
             annotations_list2.append(annotations_list1)    
         return annotations_list2
 
-    def get_all_annotators_tokens_labels_single_doc(self, doc_idx) -> pd.DataFrame:
+    def get_all_annotators_tokens_labels_single_doc_labels(self, doc_idx) -> pd.DataFrame:
         """
             Gets the tokens and labels for a doc_idx for all the annotators
 
@@ -82,7 +80,7 @@ class Label_Metrics :
 
         """
         # Initialize an empty DataFrame with the desired columns
-        annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label', 'start', 'end'])
+        annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label'])
 
         # Loop through all the annotators
         for annotator in self.annotator_list:
@@ -90,10 +88,10 @@ class Label_Metrics :
             annotator_id = annotator.name
             mention = annotator.get_doc_mentions(doc_idx)
             token = annotator.get_doc_tokens(doc_idx)
-            annotated = self.get_token_label(token, mention)
+            annotated = self.get_token_label_labels(token, mention)
 
             # Create a temporary DataFrame to store the current annotator's data
-            temp_df = pd.DataFrame(annotated, columns=['token', 'label', 'start', 'end'])
+            temp_df = pd.DataFrame(annotated, columns=['token', 'label'])
             temp_df['annotator_id'] = annotator_id
 
             # Append the temporary DataFrame to the main DataFrame using pandas.concat
@@ -101,7 +99,7 @@ class Label_Metrics :
 
         return annotated_df
 
-    def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
+    def create_single_annotations_table_labels(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
         # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
         table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
 
@@ -109,7 +107,7 @@ class Label_Metrics :
         table = table.astype(object).where(pd.notnull(table), None)
         return table
 
-    def get_accumulated_table(self) -> pd.DataFrame:
+    def get_accumulated_table_labels(self) -> pd.DataFrame:
         """
             Get the accumulated table for all the documents
 
@@ -123,79 +121,69 @@ class Label_Metrics :
         accumulated_table = pd.DataFrame()
         for doc_idx in same_docs:
             # Get the tokens and labels for a doc_idx for all the annotators
-            annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
+            annotated_df = self.get_all_annotators_tokens_labels_single_doc_labels(doc_idx)
 
             # Create a table with tokens as rows and annotators as columns
-            table = self.create_single_annotations_table(annotated_df)
+            table = self.create_single_annotations_table_labels(annotated_df)
 
             # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
- 
-    def get_token_iaa_values(self, df: pd.DataFrame) -> pd.DataFrame:    
-        # Get unique tokens
-        tokens = df.index.unique().values
+    
+    def get_annotator_label_agreements(self, dataframe: pd.DataFrame) -> dict:
+        dataframe = dataframe.replace({None: "NoLabel"})
+        annotators = [col for col in dataframe.columns if col.startswith('annotator')]
+        label_agreement = {annotator: {} for annotator in annotators}
 
-        # Compute the IAA coefficient for each token
-        iaa_results = []
+        for i, annotator1 in enumerate(annotators):
+            for j, annotator2 in enumerate(annotators):
+                if i < j:
+                    pairwise_df = pd.concat([dataframe[annotator1], dataframe[annotator2]], axis=1)
+                    labels = set(pairwise_df[annotator1].unique()) | set(pairwise_df[annotator2].unique())
 
-        for token in tokens:
-            token_data = df.loc[[token]]
-            
-            try:
-                # Calculate Krippendorff's alpha
-                cac_coefficient = CAC(token_data)
-                krippendorff_values = cac_coefficient.fleiss()
-                alpha = krippendorff_values['est']['coefficient_value']
-            except ZeroDivisionError:
-                alpha = np.nan
-            
-            iaa_results.append({'token': token, 'IAA coefficient': alpha})
+                    for label in labels:
+                        label_df = pairwise_df[((pairwise_df[annotator1] == label) | (pairwise_df[annotator2] == label))]
+                        kappa = cohen_kappa_score((label_df[annotator1] == label).astype(int), (label_df[annotator2] == label).astype(int))
 
-        # Convert the results to a pandas DataFrame
-        iaa_df = pd.DataFrame(iaa_results)
-        # remove nan values
-        iaa_df = iaa_df.dropna()
-        return iaa_df
+                        if label not in label_agreement[annotator1]:
+                            label_agreement[annotator1][label] = []
+                        label_agreement[annotator1][label].append(kappa)
 
-    def get_token_table(self, token, df: pd.DataFrame) -> pd.DataFrame:    
-        token_data = df.loc[[token]]
-        return token_data
+                        if label not in label_agreement[annotator2]:
+                            label_agreement[annotator2][label] = []
+                        label_agreement[annotator2][label].append(kappa)
 
-    def create_agreement_summary(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Reset the index to make 'token' a column
-        df = df.reset_index()        
-        # Create three empty lists for low, medium, and high agreement tokens
-        lowest_agreement = []
-        medium_low_agreement = []
-        medium_agreement = []
-        medium_high_agreement = []
-        high_agreement = []
+        # Calculate the average pairwise Kappa score for each annotator and label
+        avg_label_agreement = {annotator: {label: np.nanmean(kappas) for label, kappas in label_kappas.items()} for annotator, label_kappas in label_agreement.items()}
 
-        # Iterate through the rows of the dataframe and append tokens to the corresponding list
-        for index, row in df.iterrows():
-            if 0 <= row['IAA coefficient'] < 20:
-                lowest_agreement.append(row['token'])
-            elif 20 <= row['IAA coefficient'] < 40:
-                medium_low_agreement.append(row['token'])
-            elif 40 <= row['IAA coefficient'] < 60:
-                medium_agreement.append(row['token'])
-            elif 60 <= row['IAA coefficient'] < 80:
-                medium_high_agreement.append(row['token'])
-            elif 80 <= row['IAA coefficient'] <= 100:
-                high_agreement.append(row['token'])
+        return avg_label_agreement
 
-        # Create a new dataframe with the low, medium, and high agreement columns
-        new_df = pd.DataFrame({
-            'lowest agreement': pd.Series(lowest_agreement, dtype='object'),
-            'medium low agreement': pd.Series(medium_low_agreement, dtype='object'),
-            'medium agreement': pd.Series(medium_agreement, dtype='object'),
-            'medium high agreement': pd.Series(medium_high_agreement, dtype='object'),
-            'high agreement': pd.Series(high_agreement, dtype='object')
-        })
-        new_df = new_df.replace(pd.NA, '')
-        return new_df
 
+    def create_agreement_summary(self, agreements_dict):
+        agreement_ranges = {
+            "lowest agreement": (-1, -0.6),
+            "medium-low agreement": (-0.6, -0.2),
+            "medium agreement": (-0.2, 0.2),
+            "medium-high agreement": (0.2, 0.6),
+            "high agreement": (0.6, 1)
+        }
+
+        annotators_dfs = {}
+
+        for annotator, tokens_data in agreements_dict.items():
+            summary_data = {key: [] for key in agreement_ranges.keys()}
+
+            for token, agreement_percentage in tokens_data.items():
+                for range_name, (low, high) in agreement_ranges.items():
+                    if agreement_percentage == 1.0:
+                        summary_data["high agreement"].append(token)
+                    if low <= agreement_percentage < high:
+                        summary_data[range_name].append(token)
+
+            annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+
+        return annotators_dfs
+    
     def list_To_String(self, List: list) -> str:
         """
             Converts a list into a string 
@@ -209,9 +197,7 @@ class Label_Metrics :
                 
         """    
         str1 = " "    
-        return (str1.join(List))
-
-    
+        return (str1.join(List))    
 
 
 

@@ -115,11 +115,15 @@ class Label_Metrics :
 
         # Calculate the percentage agreement for each row (token) in the DataFrame
         boolean_df = table.values == mode_series.values[:, np.newaxis]
-        percentage_series = boolean_df.mean(axis=1) * 100   
+        percentage_series = boolean_df.mean(axis=1) * 100
 
-        table['percent_agreement'] = percentage_series
+        # Create a new DataFrame containing token and percent_agreement columns
+        percent_agreement_df = pd.DataFrame({'token': table.index, 'percent_agreement': percentage_series})
 
-        return table
+        # Group by token and calculate the median percentage agreement for each unique token
+        median_percent_agreement_df = percent_agreement_df.groupby('token').median().reset_index()
+
+        return median_percent_agreement_df
 
     def create_agreement_summary(self, df: pd.DataFrame) -> float:
         # Reset the index to make 'token' a column
