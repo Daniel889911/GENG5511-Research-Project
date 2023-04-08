@@ -142,6 +142,8 @@ class Label_Metrics :
         for token in tokens:
             token_data = df.loc[[token]]
 
+            # Replace NaN values with the label "No Label"
+            token_data.fillna("No Label", inplace=True)
             try:
                 # Calculate Krippendorff's alpha
                 cac_coefficient = CAC(token_data)
@@ -152,10 +154,6 @@ class Label_Metrics :
 
             iaa_results[token] = alpha
         return iaa_results
-
-    def get_token_table(self, token, df: pd.DataFrame) -> pd.DataFrame:    
-        token_data = df.loc[[token]]
-        return token_data
 
     def create_agreement_summary(self, agreements_dict):
         agreement_ranges = {
