@@ -132,69 +132,49 @@ class Label_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
  
-    def get_token_iaa_values(self, df: pd.DataFrame) -> pd.DataFrame:    
+    def get_token_iaa_values(self, df: pd.DataFrame) -> pd.DataFrame:
         # Get unique tokens
         tokens = df.index.unique().values
 
         # Compute the IAA coefficient for each token
-        iaa_results = []
+        iaa_results = {}
 
         for token in tokens:
             token_data = df.loc[[token]]
-            
+
             try:
                 # Calculate Krippendorff's alpha
                 cac_coefficient = CAC(token_data)
-                krippendorff_values = cac_coefficient.fleiss()
+                krippendorff_values = cac_coefficient.krippendorff()
                 alpha = krippendorff_values['est']['coefficient_value']
             except ZeroDivisionError:
                 alpha = np.nan
-            
-            iaa_results.append({'token': token, 'IAA coefficient': alpha})
 
-        # Convert the results to a pandas DataFrame
-        iaa_df = pd.DataFrame(iaa_results)
-        # remove nan values
-        iaa_df = iaa_df.dropna()
-        return iaa_df
+            iaa_results[token] = alpha
+        return iaa_results
 
     def get_token_table(self, token, df: pd.DataFrame) -> pd.DataFrame:    
         token_data = df.loc[[token]]
         return token_data
 
-    def create_agreement_summary(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Reset the index to make 'token' a column
-        df = df.reset_index()        
-        # Create three empty lists for low, medium, and high agreement tokens
-        lowest_agreement = []
-        medium_low_agreement = []
-        medium_agreement = []
-        medium_high_agreement = []
-        high_agreement = []
+    def create_agreement_summary(self, agreements_dict):
+        agreement_ranges = {
+                    "negligible agreement": (-1.0, -0.6),
+                    "weak agreement": (-0.6, -0.2),
+                    "moderate agreement": (-0.2, 0.2),
+                    "substantial agreement": (0.2, 0.6),
+                    "almost perfect agreement": (0.6, 1.0)
+                }
 
-        # Iterate through the rows of the dataframe and append tokens to the corresponding list
-        for index, row in df.iterrows():
-            if 0 <= row['IAA coefficient'] < 20:
-                lowest_agreement.append(row['token'])
-            elif 20 <= row['IAA coefficient'] < 40:
-                medium_low_agreement.append(row['token'])
-            elif 40 <= row['IAA coefficient'] < 60:
-                medium_agreement.append(row['token'])
-            elif 60 <= row['IAA coefficient'] < 80:
-                medium_high_agreement.append(row['token'])
-            elif 80 <= row['IAA coefficient'] <= 100:
-                high_agreement.append(row['token'])
+        summary_data = {key: [] for key in agreement_ranges.keys()}
 
-        # Create a new dataframe with the low, medium, and high agreement columns
-        new_df = pd.DataFrame({
-            'lowest agreement': pd.Series(lowest_agreement, dtype='object'),
-            'medium low agreement': pd.Series(medium_low_agreement, dtype='object'),
-            'medium agreement': pd.Series(medium_agreement, dtype='object'),
-            'medium high agreement': pd.Series(medium_high_agreement, dtype='object'),
-            'high agreement': pd.Series(high_agreement, dtype='object')
-        })
-        new_df = new_df.replace(pd.NA, '')
-        return new_df
+        for label, kappa_score in agreements_dict.items():
+            for range_name, (low, high) in agreement_ranges.items():
+                if low <= kappa_score < high:
+                    summary_data[range_name].append(label)
+
+        summary_df = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+        return summary_df
 
     def list_To_String(self, List: list) -> str:
         """
