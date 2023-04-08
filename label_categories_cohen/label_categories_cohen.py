@@ -1,8 +1,8 @@
 from sklearn.metrics import cohen_kappa_score
 import numpy as np
 import pandas as pd
-from typing import Tuple
 from annotator import Annotator
+import warnings
 
 
 class Label_Metrics :
@@ -149,40 +149,55 @@ class Label_Metrics :
             for i, annotator1 in enumerate(annotators):
                 for j, annotator2 in enumerate(annotators):
                     if i < j:
-                        kappa = cohen_kappa_score(label_df[annotator1], label_df[annotator2])
+                        with warnings.catch_warnings(record=True) as w:
+                            warnings.simplefilter("always")
+                            annotator1_labels = label_df[annotator1]
+                            annotator2_labels = label_df[annotator2]
+                            # Check if annotator1 and annotator2 labels are all 1
+                            if all(annotator1_labels == 1) and all(annotator2_labels == 1):
+                                kappa = 1.0
+                            # Check if annotator1 and annotator2 labels are all 0
+                            elif all(annotator1_labels == 0) and all(annotator2_labels == 0):
+                                total_pairs += 1
+                                continue
+                            else:
+                                kappa = cohen_kappa_score(annotator1_labels, annotator2_labels)
+
+                            # Check if there's a warning and if both annotators have variance in their labels
+                            if w or (label_df[annotator1].nunique() <= 1 or label_df[annotator2].nunique() <= 1):
+                                total_pairs += 1
+                                continue
+
                         total_kappa += kappa
                         total_pairs += 1
 
-            avg_kappa = total_kappa / total_pairs
+            if total_pairs == 0:
+                avg_kappa = float('nan')
+            else:
+                avg_kappa = total_kappa / total_pairs
+
             label_agreement[label] = avg_kappa
 
         return label_agreement
 
     def create_agreement_summary(self, agreements_dict):
         agreement_ranges = {
-            "lowest agreement": (-1, -0.6),
-            "medium-low agreement": (-0.6, -0.2),
-            "medium agreement": (-0.2, 0.2),
-            "medium-high agreement": (0.2, 0.6),
-            "high agreement": (0.6, 1)
-        }
+                    "negligible agreement": (-1.0, -0.6),
+                    "weak agreement": (-0.6, -0.2),
+                    "moderate agreement": (-0.2, 0.2),
+                    "substantial agreement": (0.2, 0.6),
+                    "almost perfect agreement": (0.6, 1.0)
+                }
 
-        annotators_dfs = {}
+        summary_data = {key: [] for key in agreement_ranges.keys()}
 
-        for annotator, tokens_data in agreements_dict.items():
-            summary_data = {key: [] for key in agreement_ranges.keys()}
+        for label, kappa_score in agreements_dict.items():
+            for range_name, (low, high) in agreement_ranges.items():
+                if low <= kappa_score < high:
+                    summary_data[range_name].append(label)
 
-            for token, agreement_percentage in tokens_data.items():
-                for range_name, (low, high) in agreement_ranges.items():
-                    if agreement_percentage == 1.0:
-                        summary_data["high agreement"].append(token)
-                    if low <= agreement_percentage < high:
-                        summary_data[range_name].append(token)
-
-            annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
-        # Combine all annotator DataFrames into a single DataFrame
-        combined_df = pd.concat(annotators_dfs, axis=1)
-        return combined_df
+        summary_df = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+        return summary_df
 
     def list_To_String(self, List: list) -> str:
         """

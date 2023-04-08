@@ -149,7 +149,7 @@ class Label_Metrics :
                             kappa = cohen_kappa_score(token_df[annotator1], token_df[annotator2])
                         except ValueError as ve:
                             if 'invalid value encountered in true_divide' in str(ve):
-                                kappa = np.nan
+                                kappa = 1.0
                             else:
                                 raise ve
                         
@@ -168,13 +168,12 @@ class Label_Metrics :
 
     def create_agreement_summary(self, agreements_dict):
         agreement_ranges = {
-            "lowest agreement": (-1, -0.6),
-            "medium-low agreement": (-0.6, -0.2),
-            "medium agreement": (-0.2, 0.2),
-            "medium-high agreement": (0.2, 0.6),
-            "high agreement": (0.6, 1.0)
-        }
-
+                    "negligible agreement": (-1.0, -0.6),
+                    "weak agreement": (-0.6, -0.2),
+                    "moderate agreement": (-0.2, 0.2),
+                    "substantial agreement": (0.2, 0.6),
+                    "almost perfect agreement": (0.6, 1.0)
+                }
         annotators_dfs = {}
 
         for annotator, tokens_data in agreements_dict.items():

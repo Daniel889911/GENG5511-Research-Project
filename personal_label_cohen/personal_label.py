@@ -143,7 +143,13 @@ class Label_Metrics :
 
                     for label in labels:
                         label_df = pairwise_df[((pairwise_df[annotator1] == label) | (pairwise_df[annotator2] == label))]
-                        kappa = cohen_kappa_score((label_df[annotator1] == label).astype(int), (label_df[annotator2] == label).astype(int))
+                        annotator1_labels = (label_df[annotator1] == label).astype(int)
+                        annotator2_labels = (label_df[annotator2] == label).astype(int)
+
+                        if all(annotator1_labels == 1) and all(annotator2_labels == 1):
+                            kappa = 1.0
+                        else:
+                            kappa = cohen_kappa_score(annotator1_labels, annotator2_labels)
 
                         if label not in label_agreement[annotator1]:
                             label_agreement[annotator1][label] = []
@@ -159,14 +165,15 @@ class Label_Metrics :
         return avg_label_agreement
 
 
+
     def create_agreement_summary(self, agreements_dict):
         agreement_ranges = {
-            "lowest agreement": (-1, -0.6),
-            "medium-low agreement": (-0.6, -0.2),
-            "medium agreement": (-0.2, 0.2),
-            "medium-high agreement": (0.2, 0.6),
-            "high agreement": (0.6, 1)
-        }
+                    "negligible agreement": (-1.0, -0.6),
+                    "weak agreement": (-0.6, -0.2),
+                    "moderate agreement": (-0.2, 0.2),
+                    "substantial agreement": (0.2, 0.6),
+                    "almost perfect agreement": (0.6, 1.0)
+                }
 
         annotators_dfs = {}
 
