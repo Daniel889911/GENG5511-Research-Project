@@ -132,7 +132,7 @@ class Label_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
 
-    def fleiss_kappa(annotations):
+    def get_agreement_fleiss_kappa(self, annotations):
         num_annotators = annotations.shape[0]
         num_tokens = annotations.shape[1]
 
@@ -150,15 +150,18 @@ class Label_Metrics :
         P = np.mean(np.sum(proportions**2, axis=1))
 
         # Calculate expected agreement (P_e)
-        category_proportions = np.sum(proportions, axis=0)
-        P_e = np.sum((category_proportions**2)) / num_tokens
+        category_proportions = np.sum(proportions, axis=0) / num_tokens
+        P_e = np.sum((category_proportions**2)) 
 
         # Calculate Fleiss' Kappa for the single label
         K = (P - P_e) / (1 - P_e)
         
         return K
 
-    def calculate_kappas(df):
+    def calculate_fleiss_kappas(self, df):
+        # Replace None values with 'No Label'
+        df = df.fillna('No Label')        
+
         # Find unique labels
         unique_labels = set(df.values.ravel()) - {None}
 
@@ -168,7 +171,7 @@ class Label_Metrics :
         # Convert DataFrame to binary matrices for each label and calculate Fleiss' Kappa
         for label in unique_labels:
             binary_annotations = df.applymap(lambda x: 1 if x == label else 0).to_numpy().T
-            kappa = fleiss_kappa(binary_annotations)
+            kappa = self.get_agreement_fleiss_kappa(binary_annotations)
             kappas[label] = kappa
         
         return kappas
@@ -179,7 +182,7 @@ class Label_Metrics :
                     "weak agreement": (-0.6, -0.2),
                     "moderate agreement": (-0.2, 0.2),
                     "substantial agreement": (0.2, 0.6),
-                    "almost perfect agreement": (0.6, 1.0)
+                    "almost perfect agreement": (0.6, 1.1)
                 }
 
         summary_data = {key: [] for key in agreement_ranges.keys()}

@@ -155,7 +155,7 @@ class Labels_Ngram_Metrics :
         # Loop through all the dataframes in ngrams 
         for ngram, ngram_df in ngrams_dfs.items():
             # Get the metrics for the current ngram
-            label_metrics_list = self.get_label_agreements_with_chance_cohen(ngram_df)
+            label_metrics_list = self.calculate_fleiss_kappas(ngram_df)
             ngram_metrics_list = self.get_single_ngram_agreement_list(ngram_df)
             # Add the metrics to the ngram_metrics dictionary
             ngram_metrics[ngram] = label_metrics_list, ngram_metrics_list
@@ -317,53 +317,49 @@ class Labels_Ngram_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
 
-    def get_label_agreements_with_chance_cohen(self, dataframe: pd.DataFrame) -> dict:
-        dataframe = dataframe.replace({None: "NoLabel"})
-        annotators = [col for col in dataframe.columns if col.startswith('annotator')]
+    def get_agreement_fleiss_kappa(self, annotations):
+        num_annotators = annotations.shape[0]
+        num_tokens = annotations.shape[1]
 
-        unique_labels = pd.unique(dataframe.values.ravel('K'))
+        # Create a contingency table for the single label
+        contingency_table = np.zeros((num_tokens, 2))
 
-        label_agreement = {}
+        for i in range(num_tokens):
+            contingency_table[i, 0] = np.sum(annotations[:, i] == 1)
+            contingency_table[i, 1] = np.sum(annotations[:, i] == 0)
 
+        # Calculate proportions
+        proportions = contingency_table / num_annotators
+
+        # Calculate observed agreement (P)
+        P = np.mean(np.sum(proportions**2, axis=1))
+
+        # Calculate expected agreement (P_e)
+        category_proportions = np.sum(proportions, axis=0) / num_tokens
+        P_e = np.sum((category_proportions**2)) 
+
+        # Calculate Fleiss' Kappa for the single label
+        K = (P - P_e) / (1 - P_e)
+        
+        return K
+
+    def calculate_fleiss_kappas(self, df):
+        # Replace None values with 'No Label'
+        df = df.fillna('No Label')        
+
+        # Find unique labels
+        unique_labels = set(df.values.ravel()) - {None}
+
+        # Store results in a dictionary
+        kappas = {}
+        
+        # Convert DataFrame to binary matrices for each label and calculate Fleiss' Kappa
         for label in unique_labels:
-            label_df = (dataframe == label).astype(int)
-
-            total_kappa = 0
-            total_pairs = 0
-
-            for i, annotator1 in enumerate(annotators):
-                for j, annotator2 in enumerate(annotators):
-                    if i < j:
-                        with warnings.catch_warnings(record=True) as w:
-                            warnings.simplefilter("always")
-                            annotator1_labels = label_df[annotator1]
-                            annotator2_labels = label_df[annotator2]
-                            # Check if annotator1 and annotator2 labels are all 1
-                            if all(annotator1_labels == 1) and all(annotator2_labels == 1):
-                                kappa = 1.0
-                            # Check if annotator1 and annotator2 labels are all 0
-                            elif all(annotator1_labels == 0) and all(annotator2_labels == 0):
-                                total_pairs += 1
-                                continue
-                            else:
-                                kappa = cohen_kappa_score(annotator1_labels, annotator2_labels)
-
-                            # Check if there's a warning and if both annotators have variance in their labels
-                            if w or (label_df[annotator1].nunique() <= 1 or label_df[annotator2].nunique() <= 1):
-                                total_pairs += 1
-                                continue
-
-                        total_kappa += kappa
-                        total_pairs += 1
-
-            if total_pairs == 0:
-                avg_kappa = float('nan')
-            else:
-                avg_kappa = total_kappa / total_pairs
-
-            label_agreement[label] = avg_kappa
-
-        return label_agreement 
+            binary_annotations = df.applymap(lambda x: 1 if x == label else 0).to_numpy().T
+            kappa = self.get_agreement_fleiss_kappa(binary_annotations)
+            kappas[label] = kappa
+        
+        return kappas
   
     def list_To_String(self, List: list) -> str:
         """
