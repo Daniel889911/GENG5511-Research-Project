@@ -86,26 +86,6 @@ class Label_Metrics :
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
         return annotated_df
     
-    def get_annotator_ngrams_agreements_lists(self, df):
-        ngrams_dfs = {}    
-        annotator_ngrams_list = {col: [] for col in df.columns if col != 'ngram'}
-        for ngram in df['ngram'].unique():
-            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
-            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)            
-        for ngram, ngram_df in ngrams_dfs.items():
-            total_ngrams = len(ngram_df.index)                
-            annotator_ngrams = {col: [] for col in ngram_df.columns}
-            for row_idx in range(len(ngram_df)): 
-                for col_idx in range(len(ngram_df.columns)):
-                    col = ngram_df.columns[col_idx]
-                    if ngram_df.iloc[row_idx, col_idx] != 'None':
-                        annotator_ngrams[col].append(1)
-            for annotator, ngram_list in annotator_ngrams.items():
-                annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams - sum(ngram_list)]
-            for annotator, ngram_list in annotator_ngrams.items():
-                annotator_ngrams_list[annotator].append(ngram_list)
-        return annotator_ngrams_list
-
     def create_single_annotations_table(self, annotated_df):
         pivot_df = annotated_df.pivot_table(index=['token', 'ngram'], columns='annotator_id', values='label', aggfunc='first')
         pivot_df.reset_index(inplace=True)
@@ -127,7 +107,27 @@ class Label_Metrics :
             table = self.create_single_annotations_table(annotated_df)
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
-    
+
+    def get_annotator_ngrams_agreements_lists(self, df):
+        ngrams_dfs = {}    
+        annotator_ngrams_list = {col: [] for col in df.columns if col != 'ngram'}
+        for ngram in df['ngram'].unique():
+            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
+            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)            
+        for ngram, ngram_df in ngrams_dfs.items():
+            total_ngrams = len(ngram_df.index)                
+            annotator_ngrams = {col: [] for col in ngram_df.columns}
+            for row_idx in range(len(ngram_df)): 
+                for col_idx in range(len(ngram_df.columns)):
+                    col = ngram_df.columns[col_idx]
+                    if ngram_df.iloc[row_idx, col_idx] != 'None':
+                        annotator_ngrams[col].append(1)
+            for annotator, ngram_list in annotator_ngrams.items():
+                annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams - sum(ngram_list)]
+            for annotator, ngram_list in annotator_ngrams.items():
+                annotator_ngrams_list[annotator].append(ngram_list)
+        return annotator_ngrams_list
+
     def get_agreement_percentages(self, data):
         new_data = []
         for annotator, labels_data in data.items():
