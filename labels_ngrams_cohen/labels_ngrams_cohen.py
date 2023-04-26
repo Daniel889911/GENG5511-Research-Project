@@ -220,12 +220,17 @@ class Labels_Ngram_Metrics :
     def get_single_ngram_agreement_list(self, df):         
         partial_agreements = 0
         full_agreements = 0
+        
         for row in range(len(df.index)):
-            if 'None' in df.iloc[row].values:
-                partial_agreements += 1
-            else:
+            row_values = df.iloc[row].values
+            none_count = (row_values == 'None').sum()
+            
+            if none_count == 0 or none_count == len(row_values):
                 full_agreements += 1
-        return [full_agreements, partial_agreements]
+            else:
+                partial_agreements += 1
+        
+        return full_agreements, partial_agreements
 
     def get_token_label_labels(self, tokens:list, mentions: dict) -> list:
         """

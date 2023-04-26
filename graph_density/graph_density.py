@@ -223,8 +223,8 @@ class Label_Metrics :
     def pivot_dataframe(self, pivot_table: pd.DataFrame) -> pd.DataFrame:
         # Reset the index of the pivot_table to bring 'token' back as a column
         pivot_table_reset = pivot_table.reset_index()
-        long_format_df = pd.melt(pivot_table_reset, id_vars='token', var_name='annotation_id', value_name='label')
-        long_format_df = long_format_df[['annotation_id', 'token', 'label']]
+        long_format_df = pd.melt(pivot_table_reset, id_vars='token', var_name='annotator', value_name='label')
+        long_format_df = long_format_df[['annotator', 'token', 'label']]
         long_format_df = long_format_df.dropna(subset=['label'])
         return long_format_df
 
@@ -254,33 +254,33 @@ class Label_Metrics :
     def create_agreement_graph(cls, df: pd.DataFrame) -> nx.Graph:
         G = nx.Graph()
         for _, row in df.iterrows():
-            annotation, token, label = row['annotation_id'], row['token'], row['label']
-            G.add_node(annotation, type='annotation')
+            annotator, token, label = row['annotator'], row['token'], row['label']
+            G.add_node(annotator, type='annotation')
             G.add_node((token, label), type='annotation')
-            G.add_edge(annotation, (token, label))
+            G.add_edge(annotator, (token, label))
         return G
 
     @classmethod
     def custom_graph_density(cls, G):
-        annotation_degrees = {}
+        node_degrees = {}
         for node in G.nodes():
             if G.nodes[node]['type'] == 'annotation':
-                annotation_degrees[node] = G.degree(node)
-        total_edges_by_annotation = {}
-        for annotation, degree in annotation_degrees.items():
-            total_edges_by_annotation[annotation] = degree
-        total_annotation_edges = sum(total_edges_by_annotation.values())
+                node_degrees[node] = G.degree(node)
+        
+        total_annotation_edges = sum(node_degrees.values())
+        
         # Count the total number of edges for annotation nodes with more than two edges
         edge_count = 0
-        for annotation, degree in annotation_degrees.items():
+        for node, degree in node_degrees.items():
             if degree > 2:
                 edge_count += degree
-        
+
         # Calculate the percentage of edges for nodes with more than one edge
         if total_annotation_edges == 0:
             return 0
         else:
             return edge_count / total_annotation_edges
+
 
 
 

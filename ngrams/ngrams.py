@@ -128,11 +128,16 @@ class Label_Metrics :
     def get_single_ngram_agreement_list(self, df):         
         partial_agreements = 0
         full_agreements = 0
+        
         for row in range(len(df.index)):
-            if 'None' in df.iloc[row].values:
-                partial_agreements += 1
-            else:
+            row_values = df.iloc[row].values
+            none_count = (row_values == 'None').sum()
+            
+            if none_count == 0 or none_count == len(row_values):
                 full_agreements += 1
+            else:
+                partial_agreements += 1
+        
         return full_agreements, partial_agreements
 
     def create_single_annotations_table(self, annotated_df):
@@ -187,7 +192,7 @@ class Label_Metrics :
         return new_data
 
 
-    def create_agreement_summary(self, agreements_data):
+    def create_agreement_summary(self, agreements_list):
         agreement_ranges = {
             "lowest agreement": (0, 20),
             "medium-low agreement": (20, 40),
@@ -196,21 +201,25 @@ class Label_Metrics :
             "high agreement": (80, 100)
         }
 
-        summary_data = {key: [] for key in agreement_ranges.keys()}
+        annotators_dfs = {}
 
-        for token_data in agreements_data:
-            token = list(token_data.keys())[0]
-            agreement_percentage = token_data[token] * 100
+        for annotator_data in agreements_list:
+            annotator = list(annotator_data.keys())[0]
+            tokens_data = annotator_data[annotator]
+            summary_data = {key: [] for key in agreement_ranges.keys()}
 
-            for range_name, (low, high) in agreement_ranges.items():
-                if agreement_percentage == 100 :
-                    summary_data["high agreement"].append(token)
-                if low <= agreement_percentage < high:
-                    summary_data[range_name].append(token)
+            for token_data in tokens_data:
+                token = token_data[0]
+                agreement_percentage = token_data[1] * 100
 
-        summary_df = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+                for range_name, (low, high) in agreement_ranges.items():
+                    if low <= agreement_percentage < high or agreement_percentage == 100 and range_name == "high agreement":
+                        summary_data[range_name].append(token)
+                        break  # Add this line to exit the loop once the token is appended
 
-        return summary_df
+            annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+
+        return annotators_dfs
 
     
     def list_To_String(self, List: list) -> str:

@@ -109,24 +109,38 @@ class Label_Metrics :
         return accumulated_table
 
     def get_annotator_ngrams_agreements_lists(self, df):
-        ngrams_dfs = {}    
         annotator_ngrams_list = {col: [] for col in df.columns if col != 'ngram'}
+
         for ngram in df['ngram'].unique():
-            ngrams_dfs[ngram] = df[df['ngram'] == ngram]
-            ngrams_dfs[ngram] = ngrams_dfs[ngram].drop('ngram', axis=1)            
-        for ngram, ngram_df in ngrams_dfs.items():
-            total_ngrams = len(ngram_df.index)                
-            annotator_ngrams = {col: [] for col in ngram_df.columns}
-            for row_idx in range(len(ngram_df)): 
+            ngram_df = df[df['ngram'] == ngram].drop('ngram', axis=1)
+            annotator_ngrams = {col: {'agree': 0, 'disagree': 0} for col in ngram_df.columns}
+
+            for row_idx in range(len(ngram_df)):
+                row_values = ngram_df.iloc[row_idx]
+                majority_agreement = (row_values != 'None').sum() >= len(row_values) / 2
+
                 for col_idx in range(len(ngram_df.columns)):
                     col = ngram_df.columns[col_idx]
                     if ngram_df.iloc[row_idx, col_idx] != 'None':
-                        annotator_ngrams[col].append(1)
+                        if majority_agreement:
+                            annotator_ngrams[col]['agree'] += 1
+                        else:
+                            annotator_ngrams[col]['disagree'] += 1
+                    else:
+                        if majority_agreement:
+                            annotator_ngrams[col]['disagree'] += 1
+                        else:
+                            annotator_ngrams[col]['agree'] += 1
+
             for annotator, ngram_list in annotator_ngrams.items():
-                annotator_ngrams[annotator] = [f'{ngram}-ngram', sum(ngram_list), total_ngrams - sum(ngram_list)]
-            for annotator, ngram_list in annotator_ngrams.items():
-                annotator_ngrams_list[annotator].append(ngram_list)
-        return annotator_ngrams_list
+                annotator_ngrams_list[annotator].append([
+                    f'{ngram}-ngram',
+                    ngram_list['agree'],
+                    ngram_list['disagree']
+                ])
+
+        return annotator_ngrams_list               
+        
 
     def get_agreement_percentages(self, data):
         new_data = []
@@ -169,10 +183,9 @@ class Label_Metrics :
                 agreement_percentage = token_data[1] * 100
 
                 for range_name, (low, high) in agreement_ranges.items():
-                    if agreement_percentage == 100 :
-                        summary_data["high agreement"].append(token)
-                    if low <= agreement_percentage < high:
+                    if low <= agreement_percentage < high or agreement_percentage == 100 and range_name == "high agreement":
                         summary_data[range_name].append(token)
+                        break  # Add this line to exit the loop once the token is appended
 
             annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
 

@@ -176,24 +176,34 @@ class Label_Metrics :
         
         return kappas
 
-    def create_agreement_summary(self, agreements_dict):
+    def create_agreement_summary(self, agreements_list):
         agreement_ranges = {
-                    "negligible agreement": (-1.0, -0.6),
-                    "weak agreement": (-0.6, -0.2),
-                    "moderate agreement": (-0.2, 0.2),
-                    "substantial agreement": (0.2, 0.6),
-                    "almost perfect agreement": (0.6, 1.1)
-                }
+            "lowest agreement": (0, 20),
+            "medium-low agreement": (20, 40),
+            "medium agreement": (40, 60),
+            "medium-high agreement": (60, 80),
+            "high agreement": (80, 100)
+        }
 
-        summary_data = {key: [] for key in agreement_ranges.keys()}
+        annotators_dfs = {}
 
-        for label, kappa_score in agreements_dict.items():
-            for range_name, (low, high) in agreement_ranges.items():
-                if low <= kappa_score < high:
-                    summary_data[range_name].append(label)
+        for annotator_data in agreements_list:
+            annotator = list(annotator_data.keys())[0]
+            tokens_data = annotator_data[annotator]
+            summary_data = {key: [] for key in agreement_ranges.keys()}
 
-        summary_df = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
-        return summary_df
+            for token_data in tokens_data:
+                token = token_data[0]
+                agreement_percentage = token_data[1] * 100
+
+                for range_name, (low, high) in agreement_ranges.items():
+                    if low <= agreement_percentage < high or agreement_percentage == 100 and range_name == "high agreement":
+                        summary_data[range_name].append(token)
+                        break  # Add this line to exit the loop once the token is appended
+
+            annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
+
+        return annotators_dfs
 
     def list_To_String(self, List: list) -> str:
         """
