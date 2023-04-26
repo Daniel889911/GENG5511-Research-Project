@@ -192,7 +192,7 @@ class Label_Metrics :
         return new_data
 
 
-    def create_agreement_summary(self, agreements_list):
+    def create_agreement_summary(self, agreements_data):
         agreement_ranges = {
             "lowest agreement": (0, 20),
             "medium-low agreement": (20, 40),
@@ -201,25 +201,21 @@ class Label_Metrics :
             "high agreement": (80, 100)
         }
 
-        annotators_dfs = {}
+        summary_data = {key: [] for key in agreement_ranges.keys()}
 
-        for annotator_data in agreements_list:
-            annotator = list(annotator_data.keys())[0]
-            tokens_data = annotator_data[annotator]
-            summary_data = {key: [] for key in agreement_ranges.keys()}
+        for token_data in agreements_data:
+            token = list(token_data.keys())[0]
+            agreement_percentage = token_data[token] * 100
 
-            for token_data in tokens_data:
-                token = token_data[0]
-                agreement_percentage = token_data[1] * 100
+            for range_name, (low, high) in agreement_ranges.items():
+                if agreement_percentage == 100 :
+                    summary_data["high agreement"].append(token)
+                if low <= agreement_percentage < high:
+                    summary_data[range_name].append(token)
 
-                for range_name, (low, high) in agreement_ranges.items():
-                    if low <= agreement_percentage < high or agreement_percentage == 100 and range_name == "high agreement":
-                        summary_data[range_name].append(token)
-                        break  # Add this line to exit the loop once the token is appended
+        summary_df = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
 
-            annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
-
-        return annotators_dfs
+        return summary_df
 
     
     def list_To_String(self, List: list) -> str:
