@@ -132,50 +132,7 @@ class Label_Metrics :
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
 
-    def get_agreement_fleiss_kappa(self, annotations):
-        num_annotators = annotations.shape[0]
-        num_tokens = annotations.shape[1]
-
-        # Create a contingency table for the single label
-        contingency_table = np.zeros((num_tokens, 2))
-
-        for i in range(num_tokens):
-            contingency_table[i, 0] = np.sum(annotations[:, i] == 1)
-            contingency_table[i, 1] = np.sum(annotations[:, i] == 0)
-
-        # Calculate proportions
-        proportions = contingency_table / num_annotators
-
-        # Calculate observed agreement (P)
-        P = np.mean(np.sum(proportions**2, axis=1))
-
-        # Calculate expected agreement (P_e)
-        category_proportions = np.sum(proportions, axis=0) / num_tokens
-        P_e = np.sum((category_proportions**2)) 
-
-        # Calculate Fleiss' Kappa for the single label
-        K = (P - P_e) / (1 - P_e)
-        
-        return K
-
-    def calculate_fleiss_kappas2(self, df):
-        # Replace None values with 'No Label'
-        df = df.fillna('No Label')        
-
-        # Find unique labels
-        unique_labels = set(df.values.ravel()) - {None}
-
-        # Store results in a dictionary
-        kappas = {}
-        
-        # Convert DataFrame to binary matrices for each label and calculate Fleiss' Kappa
-        for label in unique_labels:
-            binary_annotations = df.applymap(lambda x: 1 if x == label else 0).to_numpy().T
-            kappa = self.get_agreement_fleiss_kappa(binary_annotations)
-            kappas[label] = kappa
-        
-        return kappas
-    
+  
     def calculate_fleiss_kappas(self, df):
         # Replace None values with 'No Label'
         df = df.fillna('No Label')        

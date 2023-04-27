@@ -99,6 +99,41 @@ class Label_Metrics :
 
         return annotated_df
     
+    def create_single_annotations_table(self, annotated_df):
+        # Create the pivot table with 'token' as index and 'annotator_id' as columns
+        pivot_df = annotated_df.pivot_table(index=['token', 'ngram'], columns='annotator_id', values='label', aggfunc='first')
+
+        # Reset the index to make 'token' and 'ngram' regular columns
+        pivot_df.reset_index(inplace=True)
+
+        # Set the 'token' column as the index again
+        result_df = pivot_df.set_index('token')
+        result_df = result_df.fillna('None')
+        return result_df
+
+    def get_accumulated_table(self) -> pd.DataFrame:
+        """
+            Get the accumulated table for all the documents
+
+            Returns:
+                The accumulated table for all the documents
+        """
+        # Get the same document ids annotated by all the annotators
+        same_docs = self.get_same_doc_ids()
+
+        # Initialize an empty dataframe to accumulate all subdocuments' annotations
+        accumulated_table = pd.DataFrame()
+        for doc_idx in same_docs:
+            # Get the tokens and labels for a doc_idx for all the annotators
+            annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
+
+            # Create a table with tokens as rows and annotators as columns
+            table = self.create_single_annotations_table(annotated_df)
+
+            # Accumulate the annotations in the accumulated_coefficients_table
+            accumulated_table = pd.concat([accumulated_table, table], axis=0)
+        return accumulated_table
+    
     def split_df_into_dfngrams(self, df):
         # Create a dictionary to store the ngrams dataframes
         ngrams_dfs = {}    
@@ -139,41 +174,6 @@ class Label_Metrics :
                 partial_agreements += 1
         
         return full_agreements, partial_agreements
-
-    def create_single_annotations_table(self, annotated_df):
-        # Create the pivot table with 'token' as index and 'annotator_id' as columns
-        pivot_df = annotated_df.pivot_table(index=['token', 'ngram'], columns='annotator_id', values='label', aggfunc='first')
-
-        # Reset the index to make 'token' and 'ngram' regular columns
-        pivot_df.reset_index(inplace=True)
-
-        # Set the 'token' column as the index again
-        result_df = pivot_df.set_index('token')
-        result_df = result_df.fillna('None')
-        return result_df
-
-    def get_accumulated_table(self) -> pd.DataFrame:
-        """
-            Get the accumulated table for all the documents
-
-            Returns:
-                The accumulated table for all the documents
-        """
-        # Get the same document ids annotated by all the annotators
-        same_docs = self.get_same_doc_ids()
-
-        # Initialize an empty dataframe to accumulate all subdocuments' annotations
-        accumulated_table = pd.DataFrame()
-        for doc_idx in same_docs:
-            # Get the tokens and labels for a doc_idx for all the annotators
-            annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
-
-            # Create a table with tokens as rows and annotators as columns
-            table = self.create_single_annotations_table(annotated_df)
-
-            # Accumulate the annotations in the accumulated_coefficients_table
-            accumulated_table = pd.concat([accumulated_table, table], axis=0)
-        return accumulated_table
 
     def get_agreement_percentages(self, data):
         new_data = []
