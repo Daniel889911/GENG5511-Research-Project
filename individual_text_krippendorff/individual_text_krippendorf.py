@@ -157,11 +157,11 @@ class Label_Metrics :
 
     def create_agreement_summary(self, agreements_dict):
         agreement_ranges = {
-                    "negligible agreement": (-1.0, -0.6),
-                    "weak agreement": (-0.6, -0.2),
-                    "moderate agreement": (-0.2, 0.2),
-                    "substantial agreement": (0.2, 0.6),
-                    "almost perfect agreement": (0.6, 1.0)
+                    "low agreement": (-1.0, -0.6),
+                    "medium low agreement": (-0.6, -0.2),
+                    "medium agreement": (-0.2, 0.2),
+                    "medium high agreement": (0.2, 0.6),
+                    "high agreement": (0.6, 1.0)
                 }
 
         summary_data = {key: [] for key in agreement_ranges.keys()}

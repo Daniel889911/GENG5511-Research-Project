@@ -1,7 +1,7 @@
-from sklearn.metrics import cohen_kappa_score
 import numpy as np
 import pandas as pd
 from annotator import Annotator
+from irrCAC.raw import CAC
 import warnings
 
 
@@ -158,7 +158,7 @@ class Label_Metrics :
         
         return K
 
-    def calculate_fleiss_kappas(self, df):
+    def calculate_fleiss_kappas2(self, df):
         # Replace None values with 'No Label'
         df = df.fillna('No Label')        
 
@@ -172,6 +172,32 @@ class Label_Metrics :
         for label in unique_labels:
             binary_annotations = df.applymap(lambda x: 1 if x == label else 0).to_numpy().T
             kappa = self.get_agreement_fleiss_kappa(binary_annotations)
+            kappas[label] = kappa
+        
+        return kappas
+    
+    def calculate_fleiss_kappas(self, df):
+        # Replace None values with 'No Label'
+        df = df.fillna('No Label')        
+
+        # Find unique labels
+        unique_labels = set(df.values.ravel()) - {None}
+
+        # Store results in a dictionary
+        kappas = {}
+        
+        # Convert DataFrame to binary matrices for each label and calculate Fleiss' Kappa using the library
+        for label in unique_labels:
+            binary_annotations = df.applymap(lambda x: 1 if x == label else 0)
+            
+            try:
+                # Calculate Fleiss' kappa using the library
+                fleiss_kappa = CAC(binary_annotations)
+                fleiss_kappa_values = fleiss_kappa.fleiss()
+                kappa = fleiss_kappa_values['est']['coefficient_value']
+            except ZeroDivisionError:
+                kappa = np.nan
+
             kappas[label] = kappa
         
         return kappas
