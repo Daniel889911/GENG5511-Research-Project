@@ -114,11 +114,9 @@ class Label_Metrics :
         for ngram in df['ngram'].unique():
             ngram_df = df[df['ngram'] == ngram].drop('ngram', axis=1)
             annotator_ngrams = {col: {'agree': 0, 'disagree': 0} for col in ngram_df.columns}
-
             for row_idx in range(len(ngram_df)):
                 row_values = ngram_df.iloc[row_idx]
                 majority_agreement = (row_values != 'None').sum() >= len(row_values) / 2
-
                 for col_idx in range(len(ngram_df.columns)):
                     col = ngram_df.columns[col_idx]
                     if ngram_df.iloc[row_idx, col_idx] != 'None':
@@ -131,7 +129,6 @@ class Label_Metrics :
                             annotator_ngrams[col]['disagree'] += 1
                         else:
                             annotator_ngrams[col]['agree'] += 1
-
             for annotator, ngram_list in annotator_ngrams.items():
                 annotator_ngrams_list[annotator].append([
                     f'{ngram}-ngram',
@@ -146,7 +143,6 @@ class Label_Metrics :
         new_data = []
         for annotator, labels_data in data.items():
             new_labels_data = []
-
             for label_data in labels_data:
                 key = label_data[0]
                 agreement = label_data[1]
@@ -156,7 +152,6 @@ class Label_Metrics :
                 else:
                     percentage_agreement = 0.0
                 new_labels_data.append([key, percentage_agreement])
-
             new_data.append({annotator: new_labels_data})
 
         return new_data
@@ -177,18 +172,14 @@ class Label_Metrics :
             annotator = list(annotator_data.keys())[0]
             tokens_data = annotator_data[annotator]
             summary_data = {key: [] for key in agreement_ranges.keys()}
-
             for token_data in tokens_data:
                 token = token_data[0]
                 agreement_percentage = token_data[1] * 100
-
                 for range_name, (low, high) in agreement_ranges.items():
                     if low <= agreement_percentage < high or agreement_percentage == 100 and range_name == "high agreement":
                         summary_data[range_name].append(token)
                         break  # Add this line to exit the loop once the token is appended
-
             annotators_dfs[annotator] = pd.DataFrame(dict([(k, pd.Series(v, dtype='object')) for k, v in summary_data.items()]))
-
         return annotators_dfs
     
     def list_To_String(self, List: list) -> str:

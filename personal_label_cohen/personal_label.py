@@ -79,31 +79,19 @@ class Label_Metrics :
                 The tokens with labels as a DataFrame for all the annotators
 
         """
-        # Initialize an empty DataFrame with the desired columns
         annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label'])
-
-        # Loop through all the annotators
         for annotator in self.annotator_list:
-            # Get the annotator_id from the annotator object (assuming it has an 'id' attribute)
             annotator_id = annotator.name
             mention = annotator.get_doc_mentions(doc_idx)
             token = annotator.get_doc_tokens(doc_idx)
             annotated = self.get_token_label_labels(token, mention)
-
-            # Create a temporary DataFrame to store the current annotator's data
             temp_df = pd.DataFrame(annotated, columns=['token', 'label'])
             temp_df['annotator_id'] = annotator_id
-
-            # Append the temporary DataFrame to the main DataFrame using pandas.concat
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
-
         return annotated_df
 
     def create_single_annotations_table_labels(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
         table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
-
-        # Ensure the table contains dtype 'object' and missing values are replaced with None
         table = table.astype(object).where(pd.notnull(table), None)
         return table
 
@@ -114,19 +102,12 @@ class Label_Metrics :
             Returns:
                 The accumulated table for all the documents
         """
-        # Get the same document ids annotated by all the annotators
         same_docs = self.get_same_doc_ids()
 
-        # Initialize an empty dataframe to accumulate all subdocuments' annotations
         accumulated_table = pd.DataFrame()
         for doc_idx in same_docs:
-            # Get the tokens and labels for a doc_idx for all the annotators
             annotated_df = self.get_all_annotators_tokens_labels_single_doc_labels(doc_idx)
-
-            # Create a table with tokens as rows and annotators as columns
             table = self.create_single_annotations_table_labels(annotated_df)
-
-            # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
     
@@ -145,25 +126,19 @@ class Label_Metrics :
                         label_df = pairwise_df[((pairwise_df[annotator1] == label) | (pairwise_df[annotator2] == label))]
                         annotator1_labels = (label_df[annotator1] == label).astype(int)
                         annotator2_labels = (label_df[annotator2] == label).astype(int)
-
                         if all(annotator1_labels == 1) and all(annotator2_labels == 1):
                             kappa = 1.0
                         else:
                             kappa = cohen_kappa_score(annotator1_labels, annotator2_labels)
-
                         if label not in label_agreement[annotator1]:
                             label_agreement[annotator1][label] = []
                         label_agreement[annotator1][label].append(kappa)
-
                         if label not in label_agreement[annotator2]:
                             label_agreement[annotator2][label] = []
                         label_agreement[annotator2][label].append(kappa)
-
         # Calculate the average pairwise Kappa score for each annotator and label
         avg_label_agreement = {annotator: {label: np.nanmean(kappas) for label, kappas in label_kappas.items()} for annotator, label_kappas in label_agreement.items()}
-
         return avg_label_agreement
-
 
 
     def create_agreement_summary(self, agreements_dict):

@@ -11,6 +11,9 @@ def create_bar_chart(data, x_label, y_label, title):
     # Add labels to the chart
     ax.set(xlabel=x_label, ylabel=y_label, title=title)
     ax.set_ylim([0, 1])  # Set the y-axis limits to start from 0 and go up to 1
+    
+    # Rotate x-axis labels to vertical position
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="center")
 
     # Add the values on top of the bars
     for i, v in enumerate(data.values()):

@@ -6,7 +6,7 @@ def plot_agreement_coefficients(agreement_data, title='', x_axis_title='', y_axi
     plt.figure(figsize=(10, 6))
 
     coefficients = list(agreement_data.values())[0].keys()
-    
+
     for coefficient in coefficients:
         x = []
         y = []
@@ -15,10 +15,23 @@ def plot_agreement_coefficients(agreement_data, title='', x_axis_title='', y_axi
             y.append(coef_data[coefficient])
         plt.plot(x, y, label=coefficient)
 
-    plt.xlabel(x_axis_title)
-    plt.ylabel(y_axis_title)
-    plt.title(title)
-    plt.legend()
+    # Enlarging axes titles
+    plt.xlabel(x_axis_title, fontsize=16)
+    plt.ylabel(y_axis_title, fontsize=16)
+    plt.title(title, fontsize=16)
+
+    # Enlarging axes values
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+
+    # Setting y-axis to start at -1
+    plt.ylim(bottom=-1)
+
+    # Enlarging legend values
+    plt.legend(fontsize=16)
+
     plt.grid()
     plt.show()
+
+
 

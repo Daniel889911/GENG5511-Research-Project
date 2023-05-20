@@ -97,31 +97,20 @@ class Label_Metrics :
                 The tokens with labels as a DataFrame for all the annotations
 
         """
-        # Initialize an empty DataFrame with the desired columns
         annotated_df = pd.DataFrame(columns=['annotation_id', 'token', 'label'])
-
-        # Loop through all the annotations
         for annotation in self.annotation_list:
-            # Get the annotation_id from the annotation object (assuming it has an 'id' attribute)
             annotation_id = annotation.name
             mention = annotation.get_doc_mentions(doc_idx)
             token = annotation.get_doc_tokens(doc_idx)
             annotated = self.get_token_label(token, mention)
-
-            # Create a temporary DataFrame to store the current annotation's data
             temp_df = pd.DataFrame(annotated, columns=['token', 'label'])
             temp_df['annotation_id'] = annotation_id
-
-            # Append the temporary DataFrame to the main DataFrame using pandas.concat
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
 
         return annotated_df   
 
     def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotations, labels as columns
         table = annotated_df.pivot_table(index='token', columns='annotation_id', values='label', aggfunc='first')
-
-        # Ensure the table contains dtype 'object' and missing values are replaced with None
         table = table.astype(object).where(pd.notnull(table), None)
         return table
 
@@ -132,19 +121,11 @@ class Label_Metrics :
             Returns:
                 The accumulated table for all the documents
         """
-        # Get the same document ids annotated by all the annotations
         same_docs = self.get_same_doc_ids()
-
-        # Initialize an empty dataframe to accumulate all subdocuments' annotations
         accumulated_table = pd.DataFrame()
         for doc_idx in same_docs:
-            # Get the tokens and labels for a doc_idx for all the annotations
             annotated_df = self.get_all_annotations_tokens_labels_single_doc(doc_idx)
-
-            # Create a table with tokens as rows and annotations as columns
             table = self.create_single_annotations_table(annotated_df)
-
-            # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
  
@@ -192,15 +173,12 @@ class Label_Metrics :
             used_labels = []
             used_labels = [new_df.iloc[row_idx, 0]]
             available_labels = [label for label in self.labels if label not in used_labels]
-
             for col_idx in range(1, df.shape[1]):
                 current_label = df.iloc[row_idx, col_idx]
-
                 if current_label in available_labels:
                     new_label = current_label
                 else:
                     new_label = available_labels.pop(0)
-
                 new_df.iloc[row_idx, col_idx] = new_label
                 used_labels.append(new_label)
                 available_labels = [label for label in self.labels if label not in used_labels]
@@ -235,19 +213,11 @@ class Label_Metrics :
             Returns:
                 The dataframe with annotations as rows and token, annotation as columns for the whole corpus
         """
-        # Get the same document ids annotated by all the annotations
-        same_docs = self.get_same_doc_ids()
-     
-        # Initialize an empty dataframe to accumulate all subdocuments' annotations
+        same_docs = self.get_same_doc_ids()     
         accumulated_table = pd.DataFrame()
-
         for doc_idx in same_docs:
-            # Get the tokens and labels for a doc_idx for all the annotations
             table = self.get_all_annotations_tokens_labels_single_doc(doc_idx)
-
-            # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
-
         return accumulated_table
 
     @classmethod

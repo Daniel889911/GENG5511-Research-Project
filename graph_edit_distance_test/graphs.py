@@ -10,11 +10,18 @@ def plot_edit_distance_agreements(agreement_data, title='', x_axis_title='', y_a
     y = [value['Overall Reliability'] for value in agreement_data.values()]
     plt.plot(x, y)
 
-    plt.xlabel(x_axis_title)
-    plt.ylabel(y_axis_title)
-    plt.title(title)
+    # Enlarging axes titles
+    plt.xlabel(x_axis_title, fontsize=20)
+    plt.ylabel(y_axis_title, fontsize=20)
+    plt.title(title, fontsize=16)
+
+    # Enlarging axes values
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+
     plt.grid()
     plt.show()
+
 
 
 

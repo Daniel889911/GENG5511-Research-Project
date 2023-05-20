@@ -29,18 +29,11 @@ class Label_Metrics :
                 The same annotated document ids annotated by all the annotators 
 
         """ 
-        # Initialize a set with the doc_idxs from the first annotator
         same_docs = set(self.annotator_list[0].get_doc_idxs())
-
-        # Iterate through the remaining annotators, updating the set with the intersection
         for annotator in self.annotator_list[1:]:
             same_docs.intersection_update(annotator.get_doc_idxs())
-
-        # Store the same annotated document ids in the class variable
         self.same_docs = same_docs
-
         return self.same_docs
-
     
     def get_token_label(self, tokens:list, mentions: dict) -> list:
         """
@@ -81,31 +74,20 @@ class Label_Metrics :
                 The tokens with labels as a DataFrame for all the annotators
 
         """
-        # Initialize an empty DataFrame with the desired columns
         annotated_df = pd.DataFrame(columns=['annotator_id', 'token', 'label', 'start', 'end'])
-
-        # Loop through all the annotators
         for annotator in self.annotator_list:
-            # Get the annotator_id from the annotator object (assuming it has an 'id' attribute)
             annotator_id = annotator.name
             mention = annotator.get_doc_mentions(doc_idx)
             token = annotator.get_doc_tokens(doc_idx)
             annotated = self.get_token_label(token, mention)
-
-            # Create a temporary DataFrame to store the current annotator's data
             temp_df = pd.DataFrame(annotated, columns=['token', 'label', 'start', 'end'])
             temp_df['annotator_id'] = annotator_id
-
-            # Append the temporary DataFrame to the main DataFrame using pandas.concat
             annotated_df = pd.concat([annotated_df, temp_df], ignore_index=True)
 
         return annotated_df
 
     def create_single_annotations_table(self, annotated_df: pd.DataFrame) -> pd.DataFrame:
-        # Pivot the annotated_df DataFrame to create a table with tokens as rows and annotators, labels as columns
         table = annotated_df.pivot_table(index='token', columns='annotator_id', values='label', aggfunc='first')
-
-        # Ensure the table contains dtype 'object' and missing values are replaced with None
         table = table.astype(object).where(pd.notnull(table), None)
         return table
 
@@ -116,19 +98,11 @@ class Label_Metrics :
             Returns:
                 The accumulated table for all the documents
         """
-        # Get the same document ids annotated by all the annotators
         same_docs = self.get_same_doc_ids()
-
-        # Initialize an empty dataframe to accumulate all subdocuments' annotations
         accumulated_table = pd.DataFrame()
         for doc_idx in same_docs:
-            # Get the tokens and labels for a doc_idx for all the annotators
             annotated_df = self.get_all_annotators_tokens_labels_single_doc(doc_idx)
-
-            # Create a table with tokens as rows and annotators as columns
             table = self.create_single_annotations_table(annotated_df)
-
-            # Accumulate the annotations in the accumulated_coefficients_table
             accumulated_table = pd.concat([accumulated_table, table], axis=0)
         return accumulated_table
  
@@ -198,7 +172,6 @@ class Label_Metrics :
  
     def create_df_same_different(self, percentage: float, df: pd.DataFrame) -> pd.DataFrame:
         same_rows, different_rows, total_rows = self.calculate_same_different_row_numbers(percentage, df)
-        # print(f'Creating a DataFrame with {same_rows} rows with same labels and {different_rows} rows with different labels')
         same_label_df = self.create_rows_same_labels(0, same_rows, df)
         different_label_df = self.create_rows_different_labels(same_rows, total_rows, df)
         result_df = pd.concat([same_label_df, different_label_df], axis=0)
@@ -254,9 +227,7 @@ class Label_Metrics :
     def create_df_same_different2(self, percentage: float, df: pd.DataFrame) -> pd.DataFrame:
         same_rows, different_rows, total_rows = self.calculate_same_different_row_numbers(percentage, df)
         print(f'Creating a DataFrame with {same_rows} rows with same labels and {different_rows} rows with different labels')
-        new_df = df.copy()
-        
-        # Apply create_rows_same_labels to the first portion of rows (based on the percentage)
+        new_df = df.copy()        
         for row_idx in range(same_rows):
             row = new_df.iloc[row_idx]
             mode = row.mode()
@@ -266,8 +237,6 @@ class Label_Metrics :
                 most_common_label = row.iloc[0]
             for col_idx in range(new_df.shape[1]):
                 new_df.iloc[row_idx, col_idx] = most_common_label
-
-        # Apply create_rows_different_labels to the remaining rows
         for row_idx in range(same_rows, total_rows):
             used_labels = []
             used_labels = [new_df.iloc[row_idx, 0]]
